@@ -1,0 +1,2477 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="蓄電池試算">
+<title>蓄電池・太陽光 試算ツール | Resolution 365</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .num { font-variant-numeric: tabular-nums; }
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type=number] { -moz-appearance: textfield; }
+  .field-input {
+    @apply w-full px-3 py-2.5 text-base border border-slate-300 rounded-lg
+           focus:ring-2 focus:ring-blue-400 focus:border-transparent
+           bg-white text-slate-800 transition;
+  }
+  .section-title {
+    @apply flex items-center justify-between w-full py-3 px-4
+           bg-slate-50 hover:bg-slate-100 rounded-lg cursor-pointer
+           transition;
+  }
+  details > summary { list-style: none; }
+  details > summary::-webkit-details-marker { display: none; }
+  .arrow { transition: transform 0.2s; }
+  details[open] .arrow { transform: rotate(180deg); }
+
+  /* Mobile-friendly tap targets */
+  @media (max-width: 640px) {
+    input, select, button { min-height: 44px; }
+  }
+  /* PDF print styles */
+  @media print {
+    .no-print { display: none !important; }
+    body { background: white !important; }
+  }
+  /* PDF page break control */
+  .pdf-block {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .pdf-page-break {
+    page-break-before: always;
+    break-before: page;
+  }
+</style>
+</head>
+<body class="bg-gradient-to-br from-slate-50 to-blue-50 min-h-screen">
+
+<!-- ========== ログイン画面 ========== -->
+<div id="login-screen" class="fixed inset-0 bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center z-50">
+  <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-sm mx-4">
+    <div class="text-center mb-6">
+      <div class="mb-4">
+        <img src="data:image/png;base64,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UiAA4GpEw3sw4anVXbK5VuJ0mzcDA+ylSVTl0UXcvL9NyWo/3sR8APEGoE/oTMtLMZcDLzV8HnEmcJ3EYUa/D36yYJ7hRKFLgWuwT0WaK/sryDcgPZGyncVxoCOAPwUOF5yB2SJ8haV7JK62/WSkfpeZxY83PJpSaH6q8caR4YEfUveuiQSYvdkArLKNAnsaDBYuq8sPxA2Y0x+Cu+R+VydYWWewjg4PTII2AuPY10r6lEsAXif4is2NoC3AUYiHCV0CXI+5zWKj7F+A3lV3ifvRyDHrWXXT4GOApeAvgeaD7wV+jLnJ0qPrtg2tFdSbKfvBPMbw/PrRrK7za24HrqM+3yh+KTediL1di9G8Gse31OXDXTN55ektXADfvLa1HmiQ+tTD+ZR1UJspz70V4FvW7LDmp0GZvDdG67kBdSavYYtaUzE6Hi9Z12X5lmQwERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERER+6z/D+kBjSgTtIl3AAAAAElFTkSuQmCC" alt="Resolution 365" class="h-12 mx-auto">
+      </div>
+      <h1 class="text-xl font-bold text-slate-800">蓄電池・太陽光 試算ツール</h1>
+      
+    </div>
+    <form onsubmit="handleLogin(event)">
+      <input type="password" id="password-input" placeholder="パスワード"
+             class="w-full px-4 py-3 border border-slate-300 rounded-lg
+                    focus:ring-2 focus:ring-blue-400 focus:border-transparent
+                    text-base mb-3" autofocus>
+      <button type="submit"
+              class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium
+                     py-3 rounded-lg transition shadow-sm">ログイン</button>
+      <p id="login-error" class="text-red-500 text-sm mt-3 text-center hidden">
+        パスワードが違います
+      </p>
+    </form>
+  </div>
+</div>
+
+<!-- ========== メインアプリ ========== -->
+<div id="app" class="hidden">
+  <!-- Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm no-print">
+    <div class="max-w-5xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <img src="data:image/png;base64,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UiAA4GpEw3sw4anVXbK5VuJ0mzcDA+ylSVTl0UXcvL9NyWo/3sR8APEGoE/oTMtLMZcDLzV8HnEmcJ3EYUa/D36yYJ7hRKFLgWuwT0WaK/sryDcgPZGyncVxoCOAPwUOF5yB2SJ8haV7JK62/WSkfpeZxY83PJpSaH6q8caR4YEfUveuiQSYvdkArLKNAnsaDBYuq8sPxA2Y0x+Cu+R+VydYWWewjg4PTII2AuPY10r6lEsAXif4is2NoC3AUYiHCV0CXI+5zWKj7F+A3lV3ifvRyDHrWXXT4GOApeAvgeaD7wV+jLnJ0qPrtg2tFdSbKfvBPMbw/PrRrK7za24HrqM+3yh+KTediL1di9G8Gse31OXDXTN55ektXADfvLa1HmiQ+tTD+ZR1UJspz70V4FvW7LDmp0GZvDdG67kBdSavYYtaUzE6Hi9Z12X5lmQwERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERER+6z/D+kBjSgTtIl3AAAAAElFTkSuQmCC" alt="Resolution 365" class="h-9 sm:h-10 w-auto">
+        <div>
+          <h1 class="text-base sm:text-lg font-bold text-slate-800">蓄電池・太陽光 試算ツール</h1>
+          <p class="text-xs text-slate-500">Resolution 365</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <!-- 顧客リストボタン -->
+        <button onclick="openCustomerList()" title="顧客リスト"
+                class="flex items-center gap-1.5 text-xs sm:text-sm px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 transition font-medium text-slate-700">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          <span class="hidden sm:inline">顧客リスト</span>
+          <span id="customer-count-badge" class="bg-blue-600 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center hidden">0</span>
+        </button>
+        <!-- 保存ボタン -->
+        <button onclick="saveCustomer()" title="顧客データを保存"
+                class="flex items-center gap-1.5 text-xs sm:text-sm px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 transition font-medium text-white shadow-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/>
+          </svg>
+          <span class="hidden sm:inline">保存</span>
+        </button>
+        <!-- リセットボタン -->
+        <button onclick="resetForm()" title="入力をリセット（新規）"
+                class="p-2 rounded-lg hover:bg-slate-100 transition">
+          <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          </svg>
+        </button>
+        <!-- ログアウト -->
+        <button onclick="logout()" title="ログアウト"
+                class="p-2 rounded-lg hover:bg-slate-100 transition">
+          <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 py-6 pb-32">
+
+    <!-- お客様情報 -->
+    <details open class="bg-white rounded-2xl shadow-sm border border-slate-200 mb-3 overflow-hidden no-print">
+      <summary class="section-title">
+        <span class="font-semibold text-slate-800">📋 お客様情報（PDF用）</span>
+        <svg class="arrow w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </summary>
+      <div class="p-4 space-y-3">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">お客様名</label>
+          <input type="text" id="customer_name" placeholder="例：山田 太郎 様" class="field-input">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">担当者名</label>
+          <input type="text" id="staff_name" placeholder="営業担当者名" class="field-input">
+        </div>
+        <hr class="border-slate-200">
+        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">補助金自動計算用</p>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">都道府県（関東圏）</label>
+          <select id="prefecture" class="field-input" onchange="onPrefectureChange()">
+            <option value="">選択してください</option>
+            <option value="東京都">東京都</option>
+            <option value="神奈川県">神奈川県</option>
+            <option value="埼玉県">埼玉県</option>
+            <option value="その他">その他（補助金計算対象外）</option>
+          </select>
+        </div>
+        <div id="city-row">
+          <label class="block text-sm font-medium text-slate-700 mb-1">市区町村</label>
+          <select id="city" class="field-input" onchange="calc()">
+            <option value="">都道府県を先に選択してください</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">DR（デマンドレスポンス）参加</label>
+          <select id="dr_participation" class="field-input" onchange="onDrChange()">
+            <option value="なし">なし</option>
+            <option value="あり">あり（東京都：上限撤廃 ＋ 加算補助あり）</option>
+          </select>
+          <!-- DRタイプ選択（DR参加ありの場合のみ表示） -->
+          <div id="dr-type-row" class="hidden mt-2">
+            <label class="block text-sm font-medium text-slate-600 mb-1">DRパターン（端末設置方法）</label>
+            <select id="dr_type" class="field-input" onchange="calc()">
+              <option value="端末設置">端末設置（IoT機器を新設）→ +15万円</option>
+              <option value="端末レス">端末レス（端末レスDRサービス利用）→ +10万円</option>
+            </select>
+          </div>
+          <p class="text-xs text-slate-500 mt-1">DRとは電力需給逼迫時に蓄電池を制御・放電する仕組みへの参加。<strong class="text-slate-600">東京都ではDR参加により①蓄電池補助金の120万円上限撤廃 ＋ ②端末設置+15万円 or 端末レス+10万円の加算があります。</strong></p>
+        </div>
+      </div>
+    </details>
+
+    <!-- ① 電気使用状況 -->
+    <details open class="bg-white rounded-2xl shadow-sm border border-slate-200 mb-3 overflow-hidden no-print">
+      <summary class="section-title">
+        <span class="font-semibold text-slate-800">① 現在の電気使用状況</span>
+        <svg class="arrow w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </summary>
+      <div class="p-4 space-y-3">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">家族人数</label>
+          <select id="family_size" class="field-input" onchange="onFamilyChange()">
+            <option value="1">1人</option>
+            <option value="2">2人</option>
+            <option value="3">3人</option>
+            <option value="4" selected>4人</option>
+            <option value="5">5人以上</option>
+          </select>
+          <p class="text-xs text-slate-500 mt-1" id="family-info">参考：4人世帯の月平均使用量は約436kWh</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">日中（10-15時）の在宅状況</label>
+          <select id="daytime_occupancy" class="field-input" onchange="calc()">
+            <option value="不在多い">不在多い</option>
+            <option value="半々" selected>半々</option>
+            <option value="在宅多い">在宅多い</option>
+          </select>
+          <p class="text-xs text-slate-500 mt-1">太陽光が発電する日中（10〜15時）に、発電した電気を家でどれだけ直接使えるかを推定します。<strong class="text-slate-600">在宅が多いほど自家消費率が高くなり、電気代の削減効果が大きくなります</strong>（不在の場合は発電分が売電に回ります）。</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">毎月の電気代（円）</label>
+          <input type="number" id="monthly_bill" value="0" class="field-input" oninput="calc()">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">毎月の使用量（kWh）</label>
+          <input type="number" id="monthly_kwh" value="0" class="field-input" oninput="calc()">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">電力会社</label>
+          <select id="power_company" class="field-input" onchange="onCompanyChange()">
+            <optgroup label="東京電力エリア（規制・大手）">
+              <option value="東京電力EP" selected>東京電力エナジーパートナー</option>
+            </optgroup>
+            <optgroup label="東京エリア（新電力）">
+              <option value="東京ガス">東京ガス</option>
+              <option value="ソフトバンクでんき">ソフトバンクでんき</option>
+              <option value="auでんき">auでんき</option>
+              <option value="CDエナジー">CDエナジーダイレクト</option>
+              <option value="ENEOSでんき">ENEOSでんき</option>
+            </optgroup>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">電気料金プラン</label>
+          <select id="plan" class="field-input" onchange="onPlanChange()">
+            <option value="従量電灯B">従量電灯B（標準）</option>
+          </select>
+          <p class="text-xs text-slate-500 mt-1" id="plan-info">参考単価が自動セットされます</p>
+        </div>
+      </div>
+    </details>
+
+    <!-- ② 既存設備 -->
+    <details class="bg-white rounded-2xl shadow-sm border border-slate-200 mb-3 overflow-hidden no-print">
+      <summary class="section-title">
+        <span class="font-semibold text-slate-800">② 既存設備（置換・増設の場合）</span>
+        <svg class="arrow w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </summary>
+      <div class="p-4 space-y-3">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">既存設備あり？</label>
+          <select id="has_existing" class="field-input" onchange="calc()">
+            <option value="いいえ">いいえ（新規設置）</option>
+            <option value="はい">はい（置換・増設）</option>
+          </select>
+        </div>
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-800">
+          ⚠️ 「はい」を選んだ場合、上の①「月額電気代」と「月間使用量」は<strong>現在の値（既存設備設置後の実際の電気代・購入量）</strong>を入力してください。既存設備が計算に組み込まれます。
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">既存：太陽光容量（kW）</label>
+          <input type="number" id="existing_solar_kw" value="0" step="0.1" class="field-input" oninput="calc()">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">既存：年間発電量（kWh）</label>
+          <input type="number" id="existing_gen" value="0" class="field-input" oninput="calc()">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">既存：蓄電池容量（kWh）</label>
+          <input type="number" id="existing_battery" value="0" step="0.1" class="field-input" oninput="calc()">
+        </div>
+      </div>
+    </details>
+
+    <!-- ③ 新規機器 -->
+    <details open class="bg-white rounded-2xl shadow-sm border border-slate-200 mb-3 overflow-hidden no-print">
+      <summary class="section-title">
+        <span class="font-semibold text-slate-800">③ 新規設置する機器</span>
+        <svg class="arrow w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </summary>
+      <div class="p-4 space-y-3">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">設置タイプ</label>
+          <select id="config" class="field-input" onchange="calc()">
+            <option value="両方">太陽光＋蓄電池（両方）</option>
+            <option value="太陽光のみ">太陽光のみ</option>
+            <option value="蓄電池のみ">蓄電池のみ</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">新規 太陽光容量（kW）</label>
+          <input type="number" id="solar_kw" value="0" step="0.1" class="field-input" oninput="calc()">
+        </div>
+        <!-- 蓄電池メーカー・型式 -->
+        <hr class="border-slate-200">
+        <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">蓄電池メーカー・型式（任意）</p>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">メーカー</label>
+          <select id="battery_maker" class="field-input" onchange="onBatteryMakerChange()">
+            <option value="">選択してください</option>
+            <option value="ニチコン">ニチコン</option>
+            <option value="長府工産">長府工産</option>
+            <option value="オムロン">オムロン（準備中）</option>
+            <option value="京セラ">京セラ（準備中）</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">型式</label>
+          <select id="battery_model" class="field-input" onchange="onBatteryModelChange()">
+            <option value="">メーカーを先に選択してください</option>
+          </select>
+        </div>
+        <hr class="border-slate-200">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">新規 蓄電池容量 カタログ値（kWh）</label>
+          <input type="number" id="battery_kwh" value="0" step="0.1" class="field-input" oninput="onBatteryKwhManualInput()">
+          <p class="text-xs text-slate-500 mt-1">実効容量（実際に使える容量）: <span id="battery-usable-display" class="font-semibold text-blue-600">— kWh</span>
+          <span id="battery-usable-note" class="text-slate-400 ml-1">※カタログ値×85%で計算</span></p>
+        </div>
+        <input type="hidden" id="battery_kwh_effective" value="">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">
+            新規 年間発電量（kWh、0で自動）
+          </label>
+          <input type="number" id="manual_gen" value="0" class="field-input" oninput="calc()">
+          <p class="text-xs text-slate-500 mt-1">
+            設置タイプが「蓄電池のみ」の場合、既存太陽光の年間発電量がそのまま使われます（新規太陽光なし）
+          </p>
+        </div>
+        <div class="bg-blue-50 rounded-lg p-3 text-xs text-slate-700 mt-2">
+          <p class="font-semibold mb-1">📊 施工後の発電量（自動算出）</p>
+          <p>太陽光容量 <span class="num font-semibold" id="info-final-solar">— kW</span> ／
+             年間発電量 <span class="num font-semibold" id="info-final-gen">— kWh</span></p>
+          <p class="mt-1">蓄電池 カタログ容量 <span class="num font-semibold" id="info-battery-nominal">— kWh</span> ／
+             実効容量 <span class="num font-semibold text-blue-700" id="info-battery-usable">— kWh</span>
+             <span class="text-slate-400">（実計算はこちらを使用）</span></p>
+        </div>
+      </div>
+    </details>
+
+    <!-- ④ 費用と補助金 -->
+    <details class="bg-white rounded-2xl shadow-sm border border-slate-200 mb-3 overflow-hidden no-print">
+      <summary class="section-title">
+        <span class="font-semibold text-slate-800">④ 費用と補助金</span>
+        <svg class="arrow w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </summary>
+      <div class="p-4 space-y-3">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">太陽光システム費用（円）</label>
+          <input type="number" id="solar_cost" value="0" class="field-input" oninput="calc()">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">蓄電池システム費用（円）</label>
+          <input type="number" id="battery_cost" value="0" class="field-input" oninput="calc()">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">工事費・諸費用（円）</label>
+          <input type="number" id="install_cost" value="0" class="field-input" oninput="calc()">
+        </div>
+        <hr class="border-slate-200">
+        <!-- 補助金自動計算パネル -->
+        <div>
+          <div class="flex items-center justify-between mb-2">
+            <label class="block text-sm font-medium text-slate-700">補助金（自動計算）</label>
+            <button type="button" onclick="toggleSubsidyManual()" id="subsidy-toggle-btn"
+              class="text-xs text-blue-600 hover:text-blue-800 underline">手動入力に切り替え</button>
+          </div>
+
+          <!-- 自動計算表示 -->
+          <div id="subsidy-auto-display">
+            <!-- 都道府県未選択 -->
+            <div id="subsidy-no-pref" class="bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-500">
+              📍 お客様情報の都道府県を選択すると自動計算されます
+            </div>
+
+            <!-- 補助金内訳 (都道府県選択後) -->
+            <div id="subsidy-calc-panel" class="hidden bg-emerald-50 border border-emerald-200 rounded-xl p-3 space-y-1.5 text-sm">
+              <div class="flex justify-between">
+                <span class="text-slate-600">国DR補助金</span>
+                <span class="font-semibold text-emerald-700" id="auto-sub-national">¥0</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-600">都道府県補助金</span>
+                <span class="font-semibold text-emerald-700" id="auto-sub-pref">¥0</span>
+              </div>
+              <div class="flex justify-between">
+                <span class="text-slate-600">市区町村補助金</span>
+                <span class="font-semibold text-emerald-700" id="auto-sub-city">¥0</span>
+              </div>
+              <div class="flex justify-between border-t border-emerald-300 pt-1.5 font-bold">
+                <span class="text-emerald-800">補助金合計</span>
+                <span class="text-emerald-800" id="auto-sub-total">¥0</span>
+              </div>
+              <!-- 補助金内訳詳細 -->
+              <div id="subsidy-detail" class="pt-1.5 border-t border-emerald-100 text-xs text-slate-500 space-y-0.5"></div>
+              <!-- DR終了予測警告 -->
+              <div id="dr-end-warning" class="hidden mt-1 bg-amber-50 border border-amber-200 rounded-lg p-2 text-xs text-amber-800">
+                ⚠️ <strong>国DR補助金の終了予測：2026年7月末〜8月初旬頃</strong><br>
+                SII公式の残予算（約29.85億円/2026年5月18日時点）から推計。申請はお早めに。
+              </div>
+              <!-- 埼玉の注意書き -->
+              <div id="saitama-note" class="hidden mt-1 bg-blue-50 border border-blue-200 rounded-lg p-2 text-xs text-blue-800">
+                ℹ️ 埼玉県の県補助金は「あんしん事業者認定（県内事業所要件）」が必要なため当社では申請できません。<strong>国DR補助金のみ</strong>が適用可能です。
+              </div>
+              <!-- 神奈川の注意書き -->
+              <div id="kanagawa-note" class="hidden mt-1 bg-blue-50 border border-blue-200 rounded-lg p-2 text-xs text-blue-800">
+                ℹ️ 神奈川県の太陽光補助金は<strong>蓄電池との同時設置が条件</strong>です（太陽光のみの場合は対象外）。
+              </div>
+              <!-- 市区町村補助金の注記 -->
+              <div id="city-sub-note" class="hidden mt-1 text-xs text-slate-400">
+                ※市区町村補助金は年度により変更される場合があります。最新情報は各自治体HPをご確認ください。
+              </div>
+            </div>
+          </div>
+
+          <!-- 手動入力 (切り替え時に表示) -->
+          <div id="subsidy-manual-inputs" class="hidden space-y-2">
+            <div>
+              <label class="block text-xs text-slate-500 mb-1">国の補助金（円）</label>
+              <input type="number" id="subsidy_national_manual" value="0" class="field-input" oninput="onManualSubsidyChange()">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-500 mb-1">都道府県の補助金（円）</label>
+              <input type="number" id="subsidy_pref_manual" value="0" class="field-input" oninput="onManualSubsidyChange()">
+            </div>
+            <div>
+              <label class="block text-xs text-slate-500 mb-1">市区町村の補助金（円）</label>
+              <input type="number" id="subsidy_city_manual" value="0" class="field-input" oninput="onManualSubsidyChange()">
+            </div>
+          </div>
+
+          <!-- 隠し入力（calc()で参照） -->
+          <input type="hidden" id="subsidy_national" value="0">
+          <input type="hidden" id="subsidy_pref" value="0">
+          <input type="hidden" id="subsidy_city" value="0">
+        </div>
+      </div>
+    </details>
+
+    <!-- ⑤ 経済モード -->
+    <details class="bg-white rounded-2xl shadow-sm border border-slate-200 mb-3 overflow-hidden no-print">
+      <summary class="section-title">
+        <span class="font-semibold text-slate-800">⑤ 夜間蓄電モード（安い夜間電力を昼間に活用）</span>
+        <svg class="arrow w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </summary>
+      <div class="p-4 space-y-3">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">夜間蓄電モードを活用しますか？</label>
+          <select id="economy_mode" class="field-input" onchange="calc()">
+            <option value="いいえ">いいえ</option>
+            <option value="はい">はい（夜間の安い電力を蓄えて昼間に使う）</option>
+          </select>
+        </div>
+        <!-- 充電量：自動計算 or 手動 -->
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">充電量の設定方法</label>
+          <select id="arbitrage_mode" class="field-input" onchange="onArbModeChange()">
+            <option value="auto">自動計算（最適値を使用）</option>
+            <option value="manual">手動入力</option>
+          </select>
+        </div>
+
+        <!-- 自動計算パネル -->
+        <div id="arb-auto-panel" class="bg-indigo-50 border border-indigo-200 rounded-xl p-3 space-y-1.5 text-sm">
+          <div class="flex justify-between">
+            <span class="text-slate-600">グリッド購入量（日平均）</span>
+            <span class="font-semibold text-indigo-700" id="arb-daytime-consume">— kWh</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-600">太陽光が蓄電池に充電</span>
+            <span class="font-semibold text-indigo-700" id="arb-solar-cover">— kWh</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-slate-600">蓄電池の残余容量（安値充電可能枠）</span>
+            <span class="font-semibold text-indigo-700" id="arb-battery-eff">— kWh</span>
+          </div>
+          <div class="flex justify-between text-xs text-slate-500">
+            <span>プランの安値時間帯</span>
+            <span class="font-medium text-indigo-600" id="arb-cheap-label">—</span>
+          </div>
+          <div class="flex justify-between text-xs text-slate-500">
+            <span>うち高値時間帯の購入（代替対象）</span>
+            <span class="font-medium text-indigo-600" id="arb-expensive-buy">— kWh</span>
+          </div>
+          <div class="flex justify-between border-t border-indigo-300 pt-1.5 font-bold">
+            <span class="text-indigo-800">最適充電量（安値帯→高値帯代替）</span>
+            <span class="text-indigo-800" id="arb-optimal">— kWh/日</span>
+          </div>
+          <p class="text-xs text-slate-500 pt-0.5">プランの安値時間帯に充電し、高値時間帯のグリッド購入を代替する最適量を自動計算します。</p>
+          <div id="arb-no-battery" class="hidden text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2">
+            ⚠️ 蓄電池容量を入力すると最適値を計算します。
+          </div>
+        </div>
+
+        <!-- 手動入力パネル -->
+        <div id="arb-manual-panel" class="hidden">
+          <label class="block text-sm font-medium text-slate-700 mb-1">夜間→蓄電→昼利用（kWh/日）</label>
+          <input type="number" id="arbitrage_kwh" value="0" step="0.5" class="field-input" oninput="calc()">
+          <p class="text-xs text-slate-500 mt-1">蓄電池有効容量で自動キャップ</p>
+        </div>
+      </div>
+    </details>
+
+    <!-- ⑥ 資金調達 -->
+    <details class="bg-white rounded-2xl shadow-sm border border-slate-200 mb-3 overflow-hidden no-print">
+      <summary class="section-title">
+        <span class="font-semibold text-slate-800">⑥ 資金調達</span>
+        <svg class="arrow w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </summary>
+      <div class="p-4 space-y-3">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">支払い方法</label>
+          <select id="payment_method" class="field-input" onchange="onPaymentMethodChange()">
+            <option value="ローン">ローン払い</option>
+            <option value="一括">一括払い</option>
+          </select>
+        </div>
+        <!-- 一括払い時の自己資金（全額） -->
+        <div id="lump-sum-fields" class="hidden">
+          <div class="bg-green-50 border border-green-200 rounded-xl p-3 text-sm text-green-800">
+            <p class="font-semibold">✅ 一括払い</p>
+            <p class="text-xs mt-0.5">月々のローン返済なし。上の「④ 費用と補助金」に入力した実質負担額が全額自己資金となります。</p>
+          </div>
+        </div>
+        <!-- ローン払い専用フィールド -->
+        <div id="loan-fields" class="space-y-3">
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">返済方式</label>
+            <select id="loan_method" class="field-input" onchange="calc()">
+              <option value="元利均等">元利均等（月々一定）</option>
+              <option value="元金均等">元金均等（元金一定）</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">自己資金・頭金（円）</label>
+            <input type="number" id="own_funds" value="0" class="field-input" oninput="calc()">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">ローン借入額（円、0で自動）</label>
+            <input type="number" id="manual_loan" value="0" class="field-input" oninput="calc()">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">ローン金利（%）</label>
+            <input type="number" id="loan_rate_pct" value="0" step="0.1" class="field-input" oninput="calc()">
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-700 mb-1">ローン期間（年）</label>
+            <input type="number" id="loan_years" value="0" class="field-input" oninput="calc()">
+          </div>
+        </div>
+      </div>
+    </details>
+
+    <!-- ⑦ 詳細設定 -->
+    <details class="bg-white rounded-2xl shadow-sm border border-slate-200 mb-3 overflow-hidden no-print">
+      <summary class="section-title">
+        <span class="font-semibold text-slate-800">⑦ 詳細設定</span>
+        <svg class="arrow w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+        </svg>
+      </summary>
+      <div class="p-4 space-y-3">
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">電気購入単価 上書き（円/kWh、0で自動）</label>
+          <input type="number" id="buy_price_manual" value="0" step="0.1" class="field-input" oninput="calc()">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">夜間単価 上書き（円/kWh、0で自動）</label>
+          <input type="number" id="night_price_manual" value="0" step="0.1" class="field-input" oninput="calc()">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">昼間ピーク単価 上書き（円/kWh、0で自動）</label>
+          <input type="number" id="peak_price_manual" value="0" step="0.1" class="field-input" oninput="calc()">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">設置年度（FIT単価を自動計算）</label>
+          <select id="install_year" class="field-input" onchange="onInstallYearChange()">
+            <option value="0">選択してください</option>
+            <option value="2012">2012年度（42円）</option>
+            <option value="2013">2013年度（38円）</option>
+            <option value="2014">2014年度（37円）</option>
+            <option value="2015">2015年度（33円）</option>
+            <option value="2016">2016年度（31円）</option>
+            <option value="2017">2017年度（28円）</option>
+            <option value="2018">2018年度（26円）</option>
+            <option value="2019">2019年度（24円）</option>
+            <option value="2020">2020年度（21円）</option>
+            <option value="2021">2021年度（19円）</option>
+            <option value="2022">2022年度（17円）</option>
+            <option value="2023">2023年度（16円）</option>
+            <option value="2024">2024年度（16円）</option>
+            <option value="2025">2025年度（15円）</option>
+            <option value="2026" selected>2026年度以降（24円→8.3円 新スキーム）</option>
+          </select>
+          <p class="text-xs text-slate-400 mt-0.5">※2026年度以降は新スキーム（前半4年24円/後半6年8.3円）。自動入力後に手動修正可。</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">売電単価 FIT（円/kWh）</label>
+          <input type="number" id="fit_price" value="0" class="field-input" oninput="calc()">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">電気代上昇率（%/年）</label>
+          <input type="number" id="elec_inflation_pct" value="3.0" step="0.1" class="field-input" oninput="calc()">
+          <p class="text-xs text-slate-400 mt-0.5">※直近（2020〜2025年）の年平均上昇率を参考に3.0%をデフォルト設定</p>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-700 mb-1">劣化率（%/年）</label>
+          <input type="number" id="degradation_pct" value="0" step="0.1" class="field-input" oninput="calc()">
+        </div>
+      </div>
+    </details>
+
+    <!-- PDFダウンロードボタン -->
+    <div class="text-center mt-8 mb-6 no-print">
+      <button onclick="downloadPdf()"
+              class="inline-flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700
+                     text-white font-semibold rounded-lg shadow-md transition">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        結果をPDFでダウンロード
+      </button>
+    </div>
+
+    <!-- ============== 結果セクション（下部） ============== -->
+    <div id="results-area">
+
+      <!-- PDFヘッダー（顧客情報） -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 mb-4 pdf-block">
+        <div class="flex items-center justify-between flex-wrap gap-2">
+          <div class="flex items-center gap-3">
+            <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAARgAAADICAYAAAAzx/4XAAAacElEQVR42u3de5idZX3u8e+9JpMTgZxmMhMUCzOAoKjFWry23bX10qu6tdZ2i7XiCfBUrNiK1KqUYIJWRQWrVimIglWrtlTdng/dW9lW61aqRRAoJEhQSMgRSELmtO79x/OsNWutBAhJ0Bzuz2Wuy0wWa973Xev5vb/n9xxeiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIODApl2D3bVwBQJ9gLrAF8MJluS4RLY1cgt0MLssBM1NwGvA5w9NstHF5rk1EMpg9yFrqRVto8yaJlxs2A3OAFcBHgLFFyWQiEmAebNaicsWOAd4F/HfD24ArBWcDLwEut3krsB5BAk0kwMQD2lTqLTI8BbgImC14PfBlQ7P+/WU2ywT/YTgLcb0MC8/L9YuDU2owux5cZgGvEHwSuBM42eaLQHPRMsBst/kQ4sWIR0hcKXiGoZG6TCSDiZ0GFhsEixHnAKcDnwCWA3ea7i5Q+/XiOMx7gN8Ezre4FNie7lIkwERXsEAcJ3i3zUnA+RIfBu69r+HojmxlMeIc9QYlw6J0mSIB5uBVg0RD4qmUeksDOMvm60BzVwJER7fqVGC5zTWCswzXSpD5MnEwSA2mN7isAMRsiT+1+TjmNpuTbb6qXQwu0A4gY8AlmBdKDCOulHgW0KgBKCIZzMFgw1ug0QCbQYlzKUPOV9Qh53W7O+S8aTlYIDiWMrT9JMPfCC6+v65WRALMAZS1qNRbHoW50OJE4C3AR9kLxdmOyXmLMG9EvNLwacF5NmsaDVhwbj6HSIA58ILLchA0EE8HLgSmDK8D/pXWEPTe7H7BTMGLDecLbsC8zuI/M18mDkQHdQ1mUwkuc4DXAB8DVgLPxXxDezm4QLuLNW74COYFmIXAP2Oeg+jbmLpMJIM5QLpE5f8OAecBp9hcBvwNsOGh7rJsWt6+8qPABcDvAu+w+SCwdW8OY48OD5TP2Q1Wrr2WQxov8dbmV/eLz2l0aLD1HZXlZqPZ4OY770yrTYDZh7OW1vwWeIzEhYYTBMtqBjP2yyq6tufLiAUybwBe7TL791zM7W7AonP3SgOdi3gd5lGGCcFG4P8afx1p66o16/b1APMs4LfBK4BtK9euT6tNgNl3gwvQMDxT8C6bceAvgG8B/lVMgNtUAk0/4hTKwsmVlBrQf+zppLyavRwJfNvW9cAPJB4BPAX7n4zeDIytWrtvBpnR4QGwlgGnlCDDupW7eayjQwMAM4GZRlsB9553fc0RwMORfgBMrtyHA/D+YMZB0y2qGYPNqRIXAIskvge8lDLblt2cm2LMNpcJeTc+2ICw8DzYtIIJpmtA7wU+Dbwc+PZeuok0hD9n6WKaxg1OQ7pA8FXgG/vqZ1YG9loJ5165n55s/BzwK4G7dnapLD9f6EWYpwFJl/bQwVPkFTTdHi0y8OX6JRsGBnfzzwBwHHCKYGh308GFZbGkbb6DORWYDfyWtKcNVBjJJVGdhDInB/NF7DvAz7Tbmc6+GmEsIcmS9iDUSCCOBE6s17fLyNAglpF1KPas8sudCJEM5kF3CPuAfwP+BJjaw3ecAn4H+MyedjdrJgOwBrhnb3Rf1d3Apqb/rg2Ia8GPRZ5t2L5vflzCuKkSHR7S7nyzfjEMWwQ376vXJAFm/2BgApjak6JuDQiT+/ZpIpCMrTIgg6EpvNrW44BD6GlMo8ODtVblhcAczF2Sthh8X0XhkTriIzy7ttdxwDsryrZGh4xnS5qF2YI8CaKz5mGM0FTNtBs9xzcLGAFuNWxbtWYdo8ODGOZiZiFvLgmb6jWwQH2tLmM5jiVCeOWaO2moWV/tvy/dVW3d4RzriJzQbPAsl32YJ1etWb+z1/VjzZfY1De8bmrqjkGV67EuASYOlCiqdudAZa4yK9euawWDLchzakPtaPwDYA8ivVboGcazgI02lwg+Mzo0ONnZSEaGBkBI9mNBLwE9Djxu+ALo46NDg/e0Xj86PFgrKl6A9CKZ5wDzgWuAd2PfMDI8QLvBqp0lqishKz2XYxCfAf5c8I2RoYFWke10SU8GnQa0gsTvAGeDj5UYBi4BbcH+OPhLI0ODqFR6+pBejH2HxL+4/qLRpQPQFJhFwIsRzwYOE/qRzbtHhgdukkXrPIWwOUnwTuDzU3cMjgBzjK8eGRq4ErgdQW9gSg0m9rMIY7Ab9Q4+HUBKM5hRM41md2ahPtC5wCmG98m8Gviu4D3If2jVoEKrdiNAT7f4J+TjkT8J+o6kvxaci+ivGQfGWJqHdBFwNuJbtv8W/Cijy5Ae0dWxKwWjKUPDptFd7fUksBB8OEBD7b14HmZ8nPFM1zqKYTXo86DrjcaMfgLcYLGxp141E3i+pWe29uoAcBOMDzO8D/HnwDdB78ecKLhU5vDey16CKCcBZ1s+zOJupFdIXI60NBlMHCg1J7WXW9abvwTYQypF7m09/9VS4Jm2Pyb4h9qmfwg+Fuu1gq8j3T1d2vEQ8DbDj4FXgjbXrk0DOKNOYLyxo/k9xvAHwFmYK5CgbGXxeeAV4HNHhwaZzpI0JXd3kcoxyer4wc1r19fAp3GZGS4lldb7rBodHlyFWQIcB36v4c5VHd23GjRt05TU5x2LYCeCnwn8mc0/1uTwOsRnMS+TOH9kaIBVa9eX/9BM1e7zsgZc0rQtOAn0v4Dfl7h0ZGiQVQd4lykZzAEeX9T6H25O32E91+J4i5sNW91R87D8MPB8wdUl2Qek7RZfQhyPPNIeXbHAOhY4ihKMNq9csw5JGL6LmCPxsOnyrMAaBjUx17aObKu3/wT438DTZOa1Q0hpqJOddZMOh9r029zV6srUX7MdmKHyvKp2ZlaPuF9iSlJTPTVjtSOxJsH9fXI766v/uBQxacpxl5jtHwtfJXia7Tld7yVN1jrUKk8HwxvBdwCPLh/LgT9KlQBz4IeYmrpovDWxROgkWccDXxaaarXMMiefofLN1+0lA2jd5XUrMBPz8J7R20Z9/bbOe75gk2Fj52BvaU9eKJhA3NPqT8zVLICfAwuQZncOGFlM1TjX+11dXA95w/QvFcZjiP76Z/rEyt6nfbVLuGPLLpWqJmIcmNnsOQhZC1X299nSEcyaoF8gLVTZQ6jTZInYNHArFjNhaavEYbZb4TtdpNh/y7w1ADQQTzHMkTkK8Sc2N8p8ATqKjaWFLK533ru6e1rcAzSNDutpSFsoJdBDe2oQ1yOeB9zU047nARNC21tdmNHhQWxvQ/QD/T0nMWVoIDc6Y4HNEsGEeyfDmXvr97q/8ypIas/cu69yVT2P7Uiza0Brts9fPhRrvAYZBu4eZ938mVCOe2ZnW6rRa6KMspfA2BVMXOvvB8E0mwSYgyKNsQy/LTgauAf7NpUlBL+J+Nro0AAr164v33trAWKMrqFrA0zYaoL7bE3XYGEtcJdKjeJzI8OD1KHs7cCPdhLy5soer0GsK5BgNVBvprKTeTA2kg4tgYp7uw5TbAf6cEegqtVfsLB22q5VukFNzHZgANzoPe56zBMA37/3LkbnDwKaKiWn6eOuv2EC1KxZU+saGpiyhMqhJMAc6P2HPdy68n7uiftCAqN2BwH57ZQlCE3EPNDHMW/G/i5wz+iSxa0TmiOzAHi1Yfvo0GApWMpLkGeVWNXldvCnjE4Tukbmi6PDg2MTE2b1hp5hWBms2YiJOgrU+WlMqGQNfd2DRUyW6SnuKPKqXVjqygPK6U7U7KOv3fVTR4yhY0it93I1bUnbgVmUIjVHH76Q5hQIZrkEl8nuw/O4pBngvs7jA8YFtj1b0z+bArYj5tYJOk6AOfBMAU+irP0x0LeHAWaIMvV8ELF004o9fr/FNb3f8y9fjQW1BDpumFDD2LoL/CWJ84DDgRtLKxSS+0GzgMfKbOsYrJkh9AXDT1pvv2rNOkaGB5vAuykLCS8ynAK+ZEa/vj0yNLi9c5SkRuP+0u1Rs/O0ZU0hGng6VWl1Ncookma4s4uEx1UWrs7oTdfo7ZNYreC2K5d1vLSLEtDcbH2c6lfprjV7zqfO0+kqZdcMhqakWaXewnSAgTkuQXAqAeZALEyYBYj/6XI3+m790Hc3E7kHcbvM+ylDvtrDANMHPJyOL/Juv5m7v/EAK+9Y35ppegtl3scSyuhG6yUzgZ8Bp2FtQFa7Nlwad9dx1SCzGTgH82XJr7H1UeRvCM4dGR5YLWDlmvWtW3btjXTOalGJbeDOboOm60I9p2GA7S5zeWbu8OnqvhJN78rQzTjQ7zLrt6PL0+pjTV8odQQy7/xG1gQaUvtsXWs485QAcwCfs/iW4Xv1MSI/BN5ms127UdafMlN94gLE2ftmL7DdvqbvsKUV313/5ZD2Tb78oNUJaiJ75Zr1D3jLX7VmHUcND0wA38J8D3ga6D3AhSqLN7dMH4/HyiQ/zehu/+5zafzNnd4T3FMRgu2CRmetpf680f3Xrj7SDLt7cmFXFlVeNoGY0eqSafrajJdsaborVONOa2Sqibt+c/e3Se2YP1Hn6ejgaGwHp+0qaf0Y8CZMQ3A+fnC7yW1aUSZc9N7Adqkw4+5igB66+DJOWXs0u/1bSgSZqgcwo71cp/zjZC1YTq/9WboYGpYkpAYzGjN9/a2/6PpVt9SRqJHhgTHBlwyHIv4O+zdQ17YTEzVLa/Qc5wztvPG7rEWguwtS58d0d5GMpH6gaU9nBy5FYbBnIE3h+6jBlC7iBKgPlRrMyjXrWsshxgUz6MhsSuBxP6ipUtvqPJ/Wwq/m9EwkWw1NImYoAeYAL/CacYuLMBMSywz9mPM2LWfLnmy+bbgJ816L7XWfhNYIQ5nLUbaMaM3rUP17g7I38OmUSWt75yRLM9qGGLNZ1Opt1H5IXz26ydYFKR0IjSH6uxquGzDFkYaXGV8y7rHV0J792o84nLIKfGzVmvWMDg2iMrN3HHQUdV+bmkiN1wDT13XVrNmlgDpd/O3oVuzsE2wNB7kn8MwFJtU1SqXuvpN23GKmVQR2CRaNzphfuzgTgr5WbWZ06UBdVqVZ9RpO9qRYrSUaU+07TvkAmvU9EmAO8BCDzATwfspw54o6n+GcTSu4ew9WWd+B+AfgWMRCl9S5WeaA4ToU6to8XBvQXcBtpWux9wJMtQ2zBTQAZqQ0fgyz6sS3MSgT6kaHB0Dc7bIAcnZPg1mCOAP0Q+TVHe//SMzHBH9huKqjxbdWLk+quxWPY/e1pvKPLhlsNf25ZZKbJnqOv+membw1UPSXa1kC0ujw4lYGshC03Z3D1911kUZrhOg+bhETRjNwb7HeY1ZHYGy24oXnYo11BRi12pYbNWNrHRu2mkKNdJEOkiADTBo+hBmXeDtllOONm1awGXb7Ea+zKQ9Ze3LHF8/d7aPupVC+tN8BXsBeHrast/4xYKtg/vR0EKDM64A64a3jgtwsmGt8DOhno6V7QL0uDey+6T6AWkXhI4wXt39eItevgfpr4JzOBOBOiZmYeT19wwWYrXRlHqZcP9GZ8ZRYrXvr6NLcdkeqnNtSy91rrOoIksQWYDbuKQwDq9auLwtBpc0ycyjbTnR+WdYKZoHnteo6teu1ANhiM66OLhkwq3brtnckUSCa9sGzVe1Bv1Rg4bIy1ChxGXA28FzgPcAigA3Ld/ut+ynrYWZJNSMQs2tXaE5t4HMp2cKchyJlltt/3Jo80rG8Zj6iibylPbBScqqrKVt3vgp7QV2PPAv7ZOBuo2u71i7htZY3AU8QZqTuyWL0XOB24L86ayHYP7U1hfTYMn/OCGYjH4l8J/JY63hUDtkqsUmdA8GCGxHbLX63rtLGMN/SCcAtnQFm1Zr1tXLtlcAC8BEARy5Z0HPBhPB25D465tHUf7qutpcTpgOp5gJHGq9FHnfXcesQLBlt7bz0tTAjtZPYZDAHRZDZtIIp4ArK9PML63yNsxpi/aYVv5SH1fshesM5gvngjZ1fc8uHCE2A7u1MYGyvl7UC9HfIn1HJrh5jeDL4rdJ0wKgN/nbQxxGvwt4oc6vFH8s8ETjbcEfPVpc3SHwN/Fc2k4ZNEn8A/DroTcYTeoAprjVDWAn6tMRrSpfGdwJPBx0JvAOYUs/FMHxb+DaLC4S/0qf+zSPDg59sBaOakQwAW9F0F6vu3HCt8L8Cb67vdbfwHyEdL/N6S1M9H+FCRFP4ro6KcBkQO4i22s9ix44g49Lf/wRwJvB7wPsNQ6a9+/9D32Hb6yHGU5a/jXSVa62lZgirgf9j2NxqFmU3OWH4ssQfy/op1uNBm4CXYi628co6YrRyzfoyqG0uAt4HOhnxV4Kt4BcAV7bmwLTv7GUx4TLMVRJvRHqnrSOMXgn+ZKkHdW5hoE3Af2G2tNpv3WZhEjjf8A7BkxCnIDYBLwK+1qordVeF9XPQK4RuoqyAPhbT17loGnwjcDFmQ3vcu2FkjwHnAN9HPkfyO4yGSuFb/4zp3ihLrAY+Yfi52yVmAXwV9Cl2XCpxAFchDgIbV4DLvkSfKaMBnMxOtsysT1eU4I8MHxB8F3NmuRN3ZzIdywwuAP6yNumr6nt/VvDrwP+rjUH3E+SvAc4HrqQ8hA3gTcA79iRzGllSt3hs0FdnoDZXrVnf2uS7D9TvUqPZYSvMkemHnjUok+seaLvMBjBPZQ7J3cDkfT3DqG561Ye0ANNn2AyMN4CbO4JL+1Ej0kLMemCqeze99jH2I/dhxlA5x/tSN8lq2O4Dpjpf335IXV1+vXLnW2HOECwAGrY2I4937mZXXjfYKkXV+dH4prXrOHLxYOvzAONb1h/422emi9Rj0TLYuBwv+Bn/sulIJoAPIi6W+TPg5xtXtB8BuyvZ4SrK40ceaBPvqVqz2aufx6o717fSmK71M7XhTHE/M0nrFH+zC7NN62ublMl7D6gGnik6t1q479eNUxZU3t8x7nI2UM99p5Pt6r/dZ1e1BqJJHuBxJjUQ7/BYgp9tWPeQdIUTYPa3IHNeeY6SxBfqF+piwyWCMwS37mJNZgo4hvLEgcldyBYbwCMPhOs3OjyA0bySB3hLPfWZkg+hZCs7ZAdHDw2wYcEcFm2+91DKyF6zdqfarx0ZGmjNtj1MKhmEcFdXqG79MA9Jsu9xe8iY2aXrtuPvjtRgfiVBphb4vgK8TOI44MOYEdzuSj2Q2cBvAE8ETnqAP0+gY0+VA8CLgJNrIfgppaalc2HHIeJyWxeL7roX0OsNzwPeYHiSaT+FoI4psbjuh3uFYATByPCSno6/nge8pOMnjwKW07PBeSSD+ZVauKz9RMhvUmbZXoq4zPBKzE0H35O9HzhzKTctHSN4HDBWt9Q8A9gEHIP1dGDl6NDgdYhR4PiOyGDEE2UWGo0Jnw5ch7x5dHgA2wMSb5W52+h64F1Y5wr/dLT1qBA4QeYJFrMsjcheZTgEcdT9T7CLZDC/2kzmW8CphqWCj0ocl+f+9aYhAmsG5tmYp2B+CziNsmJ7EfhhwNMNJ5SRLB8Nfjb4WR1/hhFPlHxorV0tsCVbJ4E+CjoccYXE5yRWq0wtOA1YYOgHPwO5H3wi+EyLBYgFJXPyYvBhI8MDGtlXn2aZDOagzmT+jfIs68uAy4GXtzav7jFGeZD9UnZx2wWXyXZ/qfIwsf0zvpQkZFzWB4HfM54QXFP39/0JcKblFcC2OvH2qvJIkfZzj8ZlNpTZrjpPjabcbBj5ONDrhH8MPAL02o6a1ucQTwXuFroS83bEUcLvdPm8LgRGaz3sQ8C/q8yTmcw3OwFmn8pk6rD092uQ+QhwOeLUniCyGHhq2ayJXzyIX9HaknG/tWrtujrdnkdijkNaB/w38CLQCw3H1ut2LWVYfjHwBuAEypqda4E7sJaoYWpwAVgt/JGysx6zanDpq6WbbcAPsP6zPsfyEcDfgo4GLhL+a5ca2KsoM7U34gN/H5YEmP00k9m0HAxXAy8VXIa4go5hVJWC4qcfbH1GB8DnMT2/hj8EbpX5JuKTlKc3flhoHvhnhouAe12eJHAGcB6wwfKFcuN3gLNoMk9y3UeGJvB4pKOBx9U9Wa7Gmk9ZX3QPcANiCLgAcwTiNsELQW/EvqMEIq0Gth1sj29NgNmfgsz0EPaPayZzKfA/emJF/0FZgilh8hDK9P9/BzYbr5J5i+GnyOuAIVlHI6+p+0NM1cytITeGwRtAc5COtL0YsRZ0A+adwDzE5YJ/xHwWeZlhneDvXZ5DdCjmXbXLNBv4gM0WSDk+AeaXUiAA4GpEw3sw4anVXbK5VuJ0mzcDA+ylSVTl0UXcvL9NyWo/3sR8APEGoE/oTMtLMZcDLzV8HnEmcJ3EYUa/D36yYJ7hRKFLgWuwT0WaK/sryDcgPZGyncVxoCOAPwUOF5yB2SJ8haV7JK62/WSkfpeZxY83PJpSaH6q8caR4YEfUveuiQSYvdkArLKNAnsaDBYuq8sPxA2Y0x+Cu+R+VydYWWewjg4PTII2AuPY10r6lEsAXif4is2NoC3AUYiHCV0CXI+5zWKj7F+A3lV3ifvRyDHrWXXT4GOApeAvgeaD7wV+jLnJ0qPrtg2tFdSbKfvBPMbw/PrRrK7za24HrqM+3yh+KTediL1di9G8Gse31OXDXTN55ektXADfvLa1HmiQ+tTD+ZR1UJspz70V4FvW7LDmp0GZvDdG67kBdSavYYtaUzE6Hi9Z12X5lmQwERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERERER+6z/D+kBjSgTtIl3AAAAAElFTkSuQmCC" alt="Resolution 365" class="h-12 w-auto">
+            <div>
+              <h1 class="text-xl sm:text-2xl font-bold text-slate-800">蓄電池・太陽光 試算結果</h1>
+              <p class="text-sm text-slate-500 mt-1" id="r-customer-name">お客様名：—</p>
+            </div>
+          </div>
+          <div class="text-right text-sm text-slate-500">
+            <p>作成日：<span id="r-date">—</span></p>
+            <p>担当：<span id="r-staff">—</span></p>
+            <p>Resolution 365</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 施工内容 -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-4 pdf-block">
+        <h2 class="text-base font-bold text-slate-800 mb-3 flex items-center gap-2">
+          <span class="text-blue-500">🔧</span> 施工内容
+        </h2>
+        <div class="space-y-2">
+          <div class="flex items-start gap-3">
+            <span class="text-amber-500 text-xl mt-0.5">☀</span>
+            <div class="flex-1">
+              <p class="text-xs text-slate-500">太陽光</p>
+              <p class="text-sm font-semibold text-slate-700" id="r-solar-status">—</p>
+            </div>
+          </div>
+          <div class="flex items-start gap-3">
+            <span class="text-blue-500 text-xl mt-0.5">⚡</span>
+            <div class="flex-1">
+              <p class="text-xs text-slate-500">蓄電池</p>
+              <p class="text-sm font-semibold text-slate-700" id="r-battery-status">—</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======== ①電気代の削減 ======== -->
+      <div class="bg-white rounded-2xl shadow-md border-2 border-emerald-200 p-6 mb-4 pdf-block">
+        <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <span class="bg-emerald-100 text-emerald-700 w-8 h-8 rounded-full flex items-center justify-center text-sm">①</span>
+          電気代がどれくらい安くなるか
+        </h2>
+
+        <div class="grid grid-cols-2 gap-3 mb-5">
+          <div class="bg-slate-50 rounded-xl p-4 text-center">
+            <p class="text-xs text-slate-500 mb-1">現在の月額</p>
+            <p class="text-2xl sm:text-3xl font-bold text-slate-700 num" id="r-current-bill">¥0</p>
+          </div>
+          <div class="bg-blue-50 rounded-xl p-4 text-center">
+            <p class="text-xs text-slate-500 mb-1">施工後の月額</p>
+            <p class="text-2xl sm:text-3xl font-bold text-blue-600 num" id="r-new-bill">¥0</p>
+          </div>
+        </div>
+
+        <div class="bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl p-5 text-center">
+          <p class="text-sm text-slate-600 mb-1">月々の電気代削減額</p>
+          <p class="text-4xl sm:text-5xl font-bold text-emerald-600 num" id="r-monthly-savings">¥0</p>
+          <p class="text-sm text-slate-600 mt-2">
+            年間 <span class="font-bold text-emerald-700 num" id="r-annual-savings">¥0</span> の削減
+          </p>
+        </div>
+
+        <div class="mt-4 p-4 bg-slate-50 rounded-xl text-sm text-slate-700 space-y-1.5">
+          <p class="font-semibold text-slate-800 mb-2">📌 計算根拠（1日あたり）</p>
+          <div class="flex justify-between"><span>家庭の総消費量</span><span class="num font-medium" id="calc-daily-use">— kWh</span></div>
+          <div class="flex justify-between"><span>　└ うち昼間消費 <span id="calc-daytime-share" class="text-slate-400">(— %)</span></span><span class="num text-slate-500" id="calc-daytime-consume">— kWh</span></div>
+          <div class="flex justify-between"><span>　└ うち夜間消費</span><span class="num text-slate-500" id="calc-night-consume">— kWh</span></div>
+          <div class="flex justify-between border-t border-slate-200 pt-1.5 mt-1.5"><span>太陽光発電量</span><span class="num font-medium text-amber-600" id="calc-daily-solar-gen">— kWh</span></div>
+          <div class="flex justify-between"><span>　① 太陽光で直接自家消費（昼）</span><span class="num font-medium text-amber-600" id="calc-daily-solar-use">— kWh</span></div>
+          <div class="flex justify-between"><span>　② 蓄電池に充電（余剰分）</span><span class="num font-medium text-blue-600" id="calc-daily-charge">— kWh</span></div>
+          <div class="flex justify-between"><span>　③ 売電（蓄電池に入りきらない分）</span><span class="num font-medium text-emerald-600" id="calc-daily-sell">— kWh</span></div>
+          <div class="flex justify-between border-t border-slate-200 pt-1.5 mt-1.5"><span>夜間に蓄電池から放電</span><span class="num font-medium text-blue-600" id="calc-daily-battery">— kWh</span></div>
+          <div class="flex justify-between"><span class="font-semibold">残りの電気購入量</span><span class="num font-semibold" id="calc-daily-remaining">— kWh</span></div>
+          <div class="flex justify-between"><span>適用単価</span><span class="num font-medium" id="calc-unit-price">— 円/kWh</span></div>
+        </div>
+      </div>
+
+      <!-- ======== ②売電 ======== -->
+      <div class="bg-white rounded-2xl shadow-md border-2 border-amber-200 p-6 mb-4 pdf-block">
+        <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <span class="bg-amber-100 text-amber-700 w-8 h-8 rounded-full flex items-center justify-center text-sm">②</span>
+          売電（電力会社へ売っている量）
+        </h2>
+
+        <div class="grid grid-cols-3 gap-2 mb-5">
+          <div class="bg-amber-50 rounded-xl p-3 text-center">
+            <p class="text-xs text-slate-500 mb-1">年間発電量</p>
+            <p class="text-lg sm:text-xl font-bold text-amber-700 num" id="r-annual-gen">— kWh</p>
+          </div>
+          <div class="bg-blue-50 rounded-xl p-3 text-center">
+            <p class="text-xs text-slate-500 mb-1">家で使った分</p>
+            <p class="text-lg sm:text-xl font-bold text-blue-600 num" id="r-self-use">— kWh</p>
+          </div>
+          <div class="bg-emerald-50 rounded-xl p-3 text-center">
+            <p class="text-xs text-slate-500 mb-1">売電した分</p>
+            <p class="text-lg sm:text-xl font-bold text-emerald-700 num" id="r-sell-kwh">— kWh</p>
+          </div>
+        </div>
+
+        <div class="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-xl p-5 text-center">
+          <p class="text-sm text-slate-600 mb-1">月平均の売電収入</p>
+          <p class="text-3xl sm:text-4xl font-bold text-amber-600 num" id="r-sell-monthly">¥0</p>
+          <p class="text-sm text-slate-600 mt-2">
+            年間 <span class="font-bold text-amber-700 num" id="r-sell-annual">¥0</span> の収入
+          </p>
+        </div>
+        <div id="fit-price-warning" class="hidden mt-3 bg-orange-50 border border-orange-300 rounded-xl p-3 text-sm text-orange-800">
+          <p class="font-semibold mb-0.5">⚠️ 売電単価（FIT）が未入力のため売電収入が ¥0 になっています</p>
+          <p class="text-xs text-orange-700">「詳細設定」→「売電単価 FIT（円/kWh）」に値を入力してください。<br>例：2024年度の家庭用太陽光 FIT 単価は <strong>16円/kWh</strong> です。</p>
+        </div>
+
+        <div class="mt-4 p-4 bg-slate-50 rounded-xl text-sm text-slate-700 space-y-1.5">
+          <p class="font-semibold text-slate-800 mb-2">📌 計算根拠</p>
+          <div class="flex justify-between"><span>売電量（年）</span><span class="num font-medium" id="calc-sell-kwh">— kWh</span></div>
+          <div class="flex justify-between"><span>売電単価（FIT）</span><span class="num font-medium" id="calc-fit-price">— 円/kWh</span></div>
+          <p class="text-xs text-slate-500 italic mt-2">※ FIT期間（10年）終了後は売電単価が約半額になります</p>
+        </div>
+      </div>
+
+      <!-- ======== ③夜間蓄電モード ======== -->
+      <div class="bg-white rounded-2xl shadow-md border-2 border-indigo-200 p-6 mb-4 pdf-block">
+        <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <span class="bg-indigo-100 text-indigo-700 w-8 h-8 rounded-full flex items-center justify-center text-sm">③</span>
+          夜間蓄電モードによる節約
+        </h2>
+
+        <div id="arbitrage-active" class="hidden">
+          <div class="grid grid-cols-2 gap-3 mb-5">
+            <div class="bg-indigo-50 rounded-xl p-4 text-center">
+              <p class="text-xs text-slate-500 mb-1">夜間→蓄電→昼利用</p>
+              <p class="text-lg sm:text-xl font-bold text-indigo-700 num" id="r-arb-kwh">— kWh/日</p>
+            </div>
+            <div class="bg-violet-50 rounded-xl p-4 text-center">
+              <p class="text-xs text-slate-500 mb-1">単価差（昼−夜）</p>
+              <p class="text-lg sm:text-xl font-bold text-violet-700 num" id="r-arb-spread">¥0</p>
+            </div>
+          </div>
+
+          <div class="bg-gradient-to-r from-indigo-50 to-violet-50 rounded-xl p-5 text-center">
+            <p class="text-sm text-slate-600 mb-1">月の節約額（夜間蓄電モード）</p>
+            <p class="text-3xl sm:text-4xl font-bold text-indigo-600 num" id="r-arb-monthly">¥0</p>
+            <p class="text-sm text-slate-600 mt-2">
+              年間 <span class="font-bold text-indigo-700 num" id="r-arb-annual">¥0</span> の節約
+            </p>
+          </div>
+
+          <div class="mt-4 p-4 bg-slate-50 rounded-xl text-sm text-slate-700 space-y-1.5">
+            <p class="font-semibold text-slate-800 mb-2">📌 計算根拠</p>
+            <div class="flex justify-between"><span>夜間単価</span><span class="num font-medium text-indigo-600" id="calc-night-price">— 円/kWh</span></div>
+            <div class="flex justify-between"><span>昼間ピーク単価</span><span class="num font-medium text-rose-500" id="calc-peak-price">— 円/kWh</span></div>
+            <div class="flex justify-between border-t border-slate-200 pt-1.5 mt-1.5"><span>1日の節約量</span><span class="num font-medium" id="calc-arb-kwh">— kWh</span></div>
+            <p class="text-xs text-slate-500 italic mt-2">※ 蓄電池の有効容量（容量×0.85）を超える分は自動で制限されます</p>
+          </div>
+        </div>
+
+        <div id="arbitrage-inactive" class="text-center py-6 text-slate-500">
+          <p class="text-sm mb-2">夜間蓄電モードが「いいえ」になっています</p>
+          <p class="text-xs">スマートライフ・夜トクなど時間帯別プランと組み合わせると、夜の安い電力を蓄えて昼間に使い、電気代をさらに節約できます。</p>
+        </div>
+      </div>
+
+      <!-- ======== 合計メリット ======== -->
+      <div class="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-2xl shadow-lg p-6 mb-4 text-white pdf-block">
+        <h2 class="text-base font-bold mb-3 opacity-90">合計 月々のメリット</h2>
+        <div class="text-center">
+          <p class="text-5xl sm:text-6xl font-bold num" id="r-total-monthly">¥0</p>
+          <p class="text-sm mt-2 opacity-90">
+            年間 <span class="font-bold num" id="r-total-annual">¥0</span> の経済効果
+          </p>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2 mt-5 pt-5 border-t border-white/30 text-center">
+          <div>
+            <p class="text-xs opacity-80">電気代削減</p>
+            <p class="text-sm font-semibold num" id="r-bd-bill">¥0</p>
+          </div>
+          <div>
+            <p class="text-xs opacity-80">売電収入</p>
+            <p class="text-sm font-semibold num" id="r-bd-sell">¥0</p>
+          </div>
+          <div>
+            <p class="text-xs opacity-80">経済モード</p>
+            <p class="text-sm font-semibold num" id="r-bd-arb">¥0</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======== ④費用と補助金（顧客にも見せる） ======== -->
+      <div class="bg-white rounded-2xl shadow-md border-2 border-blue-200 p-6 mb-4 pdf-block">
+        <h2 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+          <span class="bg-blue-100 text-blue-700 w-8 h-8 rounded-full flex items-center justify-center text-sm">④</span>
+          費用と補助金（実質負担額）
+        </h2>
+
+        <!-- 本体価格内訳 -->
+        <div class="bg-slate-50 rounded-xl p-4 mb-4">
+          <p class="text-sm font-semibold text-slate-700 mb-3">本体価格の内訳</p>
+          <div class="space-y-1.5 text-sm">
+            <div class="flex justify-between"><span class="text-slate-600">太陽光システム</span><span class="num font-medium" id="r-cost-solar">¥0</span></div>
+            <div class="flex justify-between"><span class="text-slate-600">蓄電池システム</span><span class="num font-medium" id="r-cost-battery">¥0</span></div>
+            <div class="flex justify-between"><span class="text-slate-600">工事費・諸費用</span><span class="num font-medium" id="r-cost-install">¥0</span></div>
+            <div class="flex justify-between border-t border-slate-300 pt-2 mt-2 font-bold">
+              <span>本体価格合計</span><span class="num text-base" id="r-equip">¥0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 補助金内訳 -->
+        <div class="bg-emerald-50 rounded-xl p-4 mb-4">
+          <p class="text-sm font-semibold text-emerald-700 mb-3">補助金の内訳</p>
+          <div class="space-y-1.5 text-sm">
+            <div class="flex justify-between"><span class="text-slate-600">国DR補助金</span><span class="num font-medium text-emerald-600">−<span id="r-sub-national">¥0</span></span></div>
+            <div class="flex justify-between"><span class="text-slate-600">都道府県の補助金</span><span class="num font-medium text-emerald-600">−<span id="r-sub-pref">¥0</span></span></div>
+            <div class="flex justify-between"><span class="text-slate-600">市区町村の補助金</span><span class="num font-medium text-emerald-600">−<span id="r-sub-city">¥0</span></span></div>
+            <div class="flex justify-between border-t border-emerald-200 pt-2 mt-2 font-bold">
+              <span class="text-emerald-700">補助金合計</span><span class="num text-base text-emerald-700">−<span id="r-subsidy">¥0</span></span>
+            </div>
+          </div>
+          <!-- DR終了予測 (結果セクション) -->
+          <div id="r-dr-warning" class="hidden mt-3 bg-amber-50 border border-amber-200 rounded-lg p-2 text-xs text-amber-800">
+            ⚠️ <strong>国DR補助金の終了予測：2026年7月末〜8月初旬頃</strong><br>
+            SII公式残予算（約29.85億円/2026年5月18日時点）から推計。早めの申請をお勧めします。
+          </div>
+        </div>
+
+        <!-- 計算式 -->
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-5 mb-4">
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between items-center">
+              <span class="text-slate-600">本体価格</span>
+              <span class="num font-semibold text-slate-700" id="r-equip2">¥0</span>
+            </div>
+            <div class="flex justify-between items-center text-emerald-600">
+              <span>− 補助金合計</span>
+              <span class="num font-semibold">−<span id="r-subsidy2">¥0</span></span>
+            </div>
+            <div class="flex justify-between items-center text-2xl pt-3 border-t-2 border-blue-300">
+              <span class="font-bold text-slate-800">＝ 実質負担額</span>
+              <span class="num font-bold text-blue-700" id="r-net-cost">¥0</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 資金調達（社内モードでも顧客モードでも表示） -->
+        <div class="bg-slate-50 rounded-xl p-4">
+          <p class="text-sm font-semibold text-slate-700 mb-3">お支払いの内訳</p>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between">
+              <span class="text-slate-600">実質負担額</span>
+              <span class="num font-medium" id="r-net-cost2">¥0</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-slate-600">− 自己資金（頭金）</span>
+              <span class="num font-medium">−<span id="r-own-funds">¥0</span></span>
+            </div>
+            <div class="flex justify-between border-t border-slate-300 pt-2 mt-2">
+              <span class="font-semibold">＝ ローン借入額</span>
+              <span class="num font-bold text-slate-800" id="r-loan-principal">¥0</span>
+            </div>
+            <div class="flex justify-between mt-3 pt-3 border-t border-slate-300">
+              <span class="text-slate-600 text-xs">ローン条件</span>
+              <span class="text-xs text-slate-600 num"><span id="r-loan-cond">—</span></span>
+            </div>
+            <div class="flex justify-between items-center pt-2 border-t-2 border-blue-300">
+              <span class="font-bold text-slate-800">月々のローン返済</span>
+              <span class="num text-2xl font-bold text-blue-700" id="r-loan-monthly">¥0</span>
+            </div>
+            <div class="flex justify-between mt-2 pt-2 border-t border-slate-200 text-sm">
+              <span class="text-slate-600">総支払額（元金＋金利）</span>
+              <span class="num font-semibold text-slate-700" id="r-loan-total">¥0</span>
+            </div>
+            <div class="flex justify-between text-sm">
+              <span class="text-slate-500">　うち金利負担</span>
+              <span class="num text-orange-600 font-medium" id="r-loan-interest">¥0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======== 月々の実質収支 ======== -->
+      <div class="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl shadow-lg p-6 mb-4 text-white pdf-block">
+        <h2 class="text-base font-bold mb-3 opacity-90">月々の実質収支（メリット − ローン返済）</h2>
+        <div class="grid grid-cols-3 gap-2 text-center">
+          <div>
+            <p class="text-xs opacity-80">合計メリット</p>
+            <p class="text-base sm:text-lg font-bold num" id="r-merit-monthly">¥0</p>
+          </div>
+          <div>
+            <p class="text-xs opacity-80">ローン返済</p>
+            <p class="text-base sm:text-lg font-bold num" id="r-loan-disp">¥0</p>
+          </div>
+          <div>
+            <p class="text-xs opacity-80">実質収支</p>
+            <p class="text-base sm:text-lg font-bold num" id="r-net-monthly">¥0</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ======== 累積収支グラフ ======== -->
+      <div class="bg-white rounded-2xl shadow-md border-2 border-slate-200 p-6 mb-4 pdf-block">
+        <h2 class="text-lg font-bold text-slate-800 mb-1 flex items-center gap-2">
+          <span class="text-blue-500">📈</span> 25年間の累積収支シミュレーション
+        </h2>
+        <p class="text-xs text-slate-500 mb-4">電気代の節約・売電収入を積み上げ、初期費用を回収する推移</p>
+        <div class="relative" style="height:260px;">
+          <canvas id="cumChart"></canvas>
+        </div>
+        <div class="flex justify-center gap-4 mt-3 text-xs text-slate-600">
+          <span class="flex items-center gap-1"><span class="inline-block w-3 h-3 rounded-full bg-emerald-500"></span>累積収支</span>
+          <span class="flex items-center gap-1"><span class="inline-block w-3 h-1 bg-slate-400"></span>損益分岐点</span>
+        </div>
+      </div>
+
+      <!-- ======== 卒FIT・長期シミュレーション ======== -->
+      <div class="bg-white rounded-2xl shadow-md border-2 border-amber-200 p-6 mb-4 pdf-block">
+        <h2 class="text-lg font-bold text-slate-800 mb-1 flex items-center gap-2">
+          <span class="bg-amber-100 text-amber-700 w-8 h-8 rounded-full flex items-center justify-center text-sm">卒</span>
+          長期収支シミュレーション
+        </h2>
+        <p class="text-xs text-slate-500 mb-4">初期費用（実質負担額）を差し引いた後の累積収支です。<strong class="text-slate-600">プラスになれば「元が取れた」状態</strong>です。</p>
+
+        <!-- 累積収支マイルストーン -->
+        <div class="grid grid-cols-3 gap-3 mb-4">
+          <div class="rounded-xl p-4 text-center bg-amber-50 border border-amber-200">
+            <p class="text-xs font-bold text-amber-700 mb-0.5">10年後</p>
+            <p class="text-xs text-slate-500 mb-3">FIT終了時点</p>
+            <p class="text-xl font-bold num" id="r-cum10">¥0</p>
+            <p class="text-xs text-slate-400 mt-1">累積収支</p>
+          </div>
+          <div class="rounded-xl p-4 text-center bg-slate-50 border border-slate-200">
+            <p class="text-xs font-bold text-slate-600 mb-0.5">20年後</p>
+            <p class="text-xs text-slate-500 mb-3">卒FIT運用中</p>
+            <p class="text-xl font-bold num" id="r-cum20">¥0</p>
+            <p class="text-xs text-slate-400 mt-1">累積収支</p>
+          </div>
+          <div class="rounded-xl p-4 text-center bg-blue-50 border border-blue-200">
+            <p class="text-xs font-bold text-blue-700 mb-0.5">25年後</p>
+            <p class="text-xs text-slate-500 mb-3">機器寿命まで</p>
+            <p class="text-xl font-bold num" id="r-cum25-disp">¥0</p>
+            <p class="text-xs text-slate-400 mt-1">累積収支</p>
+          </div>
+        </div>
+
+        <!-- 内訳・補足 -->
+        <div class="bg-slate-50 rounded-xl p-4 text-sm text-slate-700 space-y-2">
+          <div class="flex justify-between items-center">
+            <span class="font-semibold">卒FITによる売電単価の変化</span>
+            <span class="num text-orange-700 font-medium" id="r-fit-after">¥0 → ¥0 /kWh</span>
+          </div>
+          <div class="border-t border-slate-200 pt-2">
+            <div class="flex justify-between text-xs text-slate-500 mb-1">
+              <span>25年間の総メリット（電気代削減＋売電収入の合計）</span>
+              <span class="num font-bold text-emerald-700" id="r-total-revenue25">¥0</span>
+            </div>
+          </div>
+        </div>
+        <!-- 隠しフィールド（JS互換用） -->
+        <span class="hidden" id="r-phase1-annual"></span>
+        <span class="hidden" id="r-phase1-cum"></span>
+        <span class="hidden" id="r-phase2-annual"></span>
+        <span class="hidden" id="r-phase2-cum"></span>
+        <span class="hidden" id="r-phase3-annual"></span>
+        <span class="hidden" id="r-phase3-cum"></span>
+        <p class="text-xs text-slate-400 mt-3">※ 卒FIT後の売電単価は現行FIT単価の約50%で試算。ローン返済も含んだ収支です。電気代上昇率・劣化率は詳細設定で調整できます。</p>
+      </div>
+
+      <!-- ======== 投資回収指標 ======== -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-4 pdf-block">
+        <h2 class="text-base font-bold text-slate-800 mb-3 flex items-center gap-2">
+          <span class="text-blue-500">📊</span> 投資回収指標
+        </h2>
+        <div class="grid grid-cols-3 gap-3">
+          <div class="text-center">
+            <p class="text-xs text-slate-500">単純回収年数</p>
+            <p class="text-base font-bold text-slate-700 num" id="r-payback">— 年</p>
+          </div>
+          <div class="text-center">
+            <p class="text-xs text-slate-500">25年ROI</p>
+            <p class="text-base font-bold text-slate-700 num" id="r-roi">—%</p>
+          </div>
+          <div class="text-center">
+            <p class="text-xs text-slate-500">25年累積収支</p>
+            <p class="text-base font-bold text-slate-700 num" id="r-cum25">¥0</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 単価情報（社内モードのみ） -->
+      <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-4">
+        <h2 class="text-sm font-semibold text-slate-500 uppercase tracking-wide mb-2">採用単価</h2>
+        <div class="grid grid-cols-2 gap-3 text-sm">
+          <div><span class="text-slate-500">購入単価:</span> <span class="font-semibold text-slate-800 num" id="r-buy-price">¥0</span></div>
+          <div><span class="text-slate-500">FIT売電:</span> <span class="font-semibold text-slate-800 num" id="r-fit-price-disp">¥0</span></div>
+          <div><span class="text-slate-500">夜間:</span> <span class="font-semibold text-slate-800 num" id="r-night-price">¥0</span></div>
+          <div><span class="text-slate-500">昼間ピーク:</span> <span class="font-semibold text-slate-800 num" id="r-peak-price">¥0</span></div>
+        </div>
+      </div>
+
+      <!-- CO2削減表示 -->
+      <div class="bg-green-50 border border-green-200 rounded-2xl p-4 mb-4 text-center pdf-block">
+        <p class="text-xs text-green-700 font-semibold mb-1">🌱 環境への貢献（年間CO₂削減量）</p>
+        <p class="text-2xl font-bold text-green-700 num"><span id="r-co2">0.0</span> t-CO₂</p>
+        <p class="text-xs text-green-600 mt-1">スギの木 約<span id="r-co2-trees">0</span>本分の吸収量に相当</p>
+      </div>
+
+      <p class="text-xs text-slate-400 text-center mt-6">
+        ※ 数値は試算です。実際の発電量・電気代は気象条件・電力プラン改定で変動します。<br>
+        ※ 補助金は申請時期・予算により変動します。最新情報を必ず確認してください。<br>
+        ※ CO₂削減量は環境省公表の排出係数（0.000434 t-CO₂/kWh）を使用した参考値です。
+      </p>
+    </div>
+  </main>
+</div>
+
+<!-- ========== 顧客リストモーダル ========== -->
+<div id="customer-modal" class="fixed inset-0 z-50 hidden">
+  <!-- オーバーレイ -->
+  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="closeCustomerList()"></div>
+  <!-- パネル -->
+  <div class="absolute right-0 top-0 bottom-0 w-full max-w-md bg-white shadow-2xl flex flex-col">
+    <!-- ヘッダー -->
+    <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200 bg-slate-50">
+      <div>
+        <h2 class="text-base font-bold text-slate-800">👥 顧客リスト</h2>
+        <p class="text-xs text-slate-500 mt-0.5">保存済みのシミュレーション一覧</p>
+      </div>
+      <button onclick="closeCustomerList()" class="p-2 rounded-lg hover:bg-slate-200 transition">
+        <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+    <!-- 検索 -->
+    <div class="px-4 py-3 border-b border-slate-100">
+      <input type="text" id="customer-search" placeholder="顧客名で検索…"
+             oninput="renderCustomerList()"
+             class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent bg-white">
+    </div>
+    <!-- リスト -->
+    <div id="customer-list-body" class="flex-1 overflow-y-auto p-4 space-y-2">
+      <!-- JS で生成 -->
+    </div>
+    <!-- フッター -->
+    <div class="px-4 py-3 border-t border-slate-200 bg-slate-50">
+      <button onclick="resetForm()" class="w-full py-2 text-sm font-medium text-slate-600 border border-slate-300 rounded-lg hover:bg-slate-100 transition">
+        ＋ 新規シミュレーション（入力リセット）
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- 保存完了トースト -->
+<div id="save-toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-sm px-5 py-3 rounded-xl shadow-lg z-50 hidden transition-all">
+  ✅ 顧客データを保存しました
+</div>
+
+<script>
+// ========== 設定 ==========
+const APP_PASSWORD = "solar2026";
+
+// ========== 電力会社別プラン・単価データ（2026年5月時点 税込参考値）==========
+// avg: 月300〜400kWh前後の世帯を想定した加重平均買電単価
+// night: 夜間割安プランの夜間単価（安値帯） / peak: 昼間・標準単価
+// cheap_hours: 安値時間帯 {start: 開始時, end: 終了時, count: 時間数} — 時間帯別プランのみ設定
+// 出典: 各電力会社公式料金表 (2025年4月〜2026年5月時点)
+const COMPANY_PLANS = {
+  // ── 東京電力エナジーパートナー ──────────────────────────────────────────
+  // 出典: 東京電力エナジーパートナー公式（2025年4月時点）
+  "東京電力EP": [
+    { name: "従量電灯B（標準・規制料金）",          rates: { avg: 36.4, night: 36.4, peak: 40.5 }, cheap_hours: null },
+    { name: "従量電灯C（大容量・規制料金）",         rates: { avg: 36.4, night: 36.4, peak: 40.5 }, cheap_hours: null },
+    { name: "スタンダードS（自由料金・標準）",       rates: { avg: 36.4, night: 36.4, peak: 40.5 }, cheap_hours: null },
+    { name: "スタンダードL（自由料金・大容量）",     rates: { avg: 36.4, night: 36.4, peak: 40.5 }, cheap_hours: null },
+    // スマートライフ: 安値 午前1時〜6時（5時間）27.86円 / その他 35.76円
+    { name: "スマートライフS（オール電化・標準）",   rates: { avg: 33.5, night: 27.86, peak: 35.76 }, cheap_hours: { start: 1, end: 6, count: 5 } },
+    { name: "スマートライフL（オール電化・大容量）",  rates: { avg: 33.5, night: 27.86, peak: 35.76 }, cheap_hours: { start: 1, end: 6, count: 5 } },
+    // 夜トク8: 安値 23時〜翌7時（8時間）31.64円 / その他 42.60円
+    { name: "夜トク8（23〜7時 割安）",              rates: { avg: 39.0, night: 31.64, peak: 42.60 }, cheap_hours: { start: 23, end: 7, count: 8 } },
+    // 夜トク12: 安値 21時〜翌9時（12時間）33.53円 / その他 44.36円
+    { name: "夜トク12（21〜9時 割安）",             rates: { avg: 39.1, night: 33.53, peak: 44.36 }, cheap_hours: { start: 21, end: 9, count: 12 } },
+    { name: "プレミアムS（高還元ポイント型）",      rates: { avg: 36.5, night: 36.5, peak: 40.5 }, cheap_hours: null },
+  ],
+
+  // ── 東京ガス ────────────────────────────────────────────────────────────
+  // 出典: 東京ガス公式料金ページ（2025年4月時点）
+  "東京ガス": [
+    { name: "基本プラン（ずっとも電気1）",           rates: { avg: 35.8, night: 35.8, peak: 39.5 }, cheap_hours: null },
+    { name: "さすてな電気（再エネ100%）",             rates: { avg: 36.7, night: 36.7, peak: 40.7 }, cheap_hours: null },
+    // 時間帯別: 安値 午前1時〜6時（5時間）27.77円 / その他 35.60円
+    { name: "時間帯別プラン（オール電化向け）",       rates: { avg: 33.5, night: 27.77, peak: 35.60 }, cheap_hours: { start: 1, end: 6, count: 5 } },
+  ],
+
+  // ── ソフトバンクでんき ──────────────────────────────────────────────────
+  // 出典: SoftBankでんき公式（2025年4月時点）
+  "ソフトバンクでんき": [
+    { name: "おうちでんき（東京エリア）",             rates: { avg: 36.2, night: 36.2, peak: 40.5 }, cheap_hours: null },
+    { name: "くらしでんき",                           rates: { avg: 35.1, night: 35.1, peak: 38.5 }, cheap_hours: null },
+    { name: "自然でんき（再エネ100%）",               rates: { avg: 36.6, night: 36.6, peak: 36.6 }, cheap_hours: null },
+  ],
+
+  // ── auでんき ────────────────────────────────────────────────────────────
+  // 出典: auでんき公式（2025年4月時点）
+  "auでんき": [
+    { name: "でんきMプラン（東京エリア）",            rates: { avg: 36.4, night: 36.4, peak: 40.5 }, cheap_hours: null },
+  ],
+
+  // ── CDエナジーダイレクト ─────────────────────────────────────────────────
+  // 出典: CDエナジーダイレクト公式（2025年4月時点）
+  "CDエナジー": [
+    { name: "ベーシックでんき",                        rates: { avg: 35.2, night: 35.2, peak: 36.5 }, cheap_hours: null },
+    // スマートでんき: 安値 午前1時〜6時（5時間）28.06円 / その他 35.96円
+    { name: "スマートでんき（オール電化向け）",         rates: { avg: 33.5, night: 28.06, peak: 35.96 }, cheap_hours: { start: 1, end: 6, count: 5 } },
+  ],
+
+  // ── ENEOSでんき ─────────────────────────────────────────────────────────
+  // 出典: ENEOSでんき（ENEOSパワー株式会社）公式（2025年4月時点）
+  // 東京Vプラン: 3段階 〜120kWh:29.80, 〜300kWh:34.85, 300kWh超:36.90 (400kWh想定平均約33.9円)
+  "ENEOSでんき": [
+    { name: "東京Vプラン（一般家庭）",                 rates: { avg: 33.9, night: 33.9, peak: 36.9 }, cheap_hours: null },
+    // 東京オール電化: 6時〜翌1時(19h)=35.75円 / 1時〜6時(5h)=27.85円 / 平均≒34.1円
+    { name: "東京オール電化プラン",                    rates: { avg: 34.1, night: 27.85, peak: 35.75 }, cheap_hours: { start: 1, end: 6, count: 5 } },
+    // 東京EV夜とく: ベーシック(20h)=35.40円 / EVタイム1時〜5時(4h)=27.85円 / 平均≒34.1円
+    { name: "東京EV夜とくプラン（EV・PHEV向け）",      rates: { avg: 34.1, night: 27.85, peak: 35.40 }, cheap_hours: { start: 1, end: 5, count: 4 } },
+  ],
+};
+
+// 後方互換用（plan名→rates のフラットマップ）
+const PLAN_RATES = {};
+Object.values(COMPANY_PLANS).forEach(plans => {
+  plans.forEach(p => { if (!PLAN_RATES[p.name]) PLAN_RATES[p.name] = p.rates; });
+});
+
+// ========== FIT売電単価 年度別（住宅用10kW未満）==========
+// 出典: 経済産業省 調達価格等算定委員会 各年度決定値
+const FIT_PRICE_BY_YEAR = {
+  2012: 42, 2013: 38, 2014: 37, 2015: 33, 2016: 31,
+  2017: 28, 2018: 26, 2019: 24, 2020: 21, 2021: 19,
+  2022: 17, 2023: 16, 2024: 16, 2025: 15,
+  2026: 24, // 新スキーム前半（1〜4年目）24円 → 後半（5〜10年目）8.3円
+};
+
+const DOD = 0.85;
+const INSOLATION = 1100;
+
+// ========== 蓄電池メーカー・型式データ ==========
+const BATTERY_MODELS = {
+  "ニチコン": [
+    { model: "ESS-T6Z1",  catalog_kwh: 19.9, effective_kwh: 18.2, powercon_kw: 9.9 },
+    { model: "ESS-T5Z1",  catalog_kwh: 19.9, effective_kwh: 18.2, powercon_kw: 5.9 },
+  ],
+  "長府工産": [
+    { model: "ESS-T6XGCK", catalog_kwh: 14.9, effective_kwh: 12.9, powercon_kw: 9.9 },
+    { model: "ESS-T5XGCK", catalog_kwh: 14.9, effective_kwh: 12.9, powercon_kw: 5.9 },
+  ],
+  "オムロン": [], // 準備中
+  "京セラ":   [], // 準備中
+};
+const FIT_YEARS = 10;
+const USEFUL_LIFE = 25;
+
+// ========== 補助金データ ==========
+// 出典：各都道府県・市区町村公式HP (2026年5月調査時点)
+// 東京都：クール・ネット東京 ZEROプログラム https://www.tokyo-co2down.jp/subsidy/zero
+// 神奈川県：神奈川県公式HP（県内住宅用再エネ補助金）
+// 埼玉県：埼玉県あんしん事業者制度（県内事業所要件のため当社は申請不可）
+// 国DR補助金：SII（環境共創イニシアチブ）公式
+
+const SUBSIDY_DATA = {
+  prefectures: {
+    "東京都": {
+      // 蓄電池：10万円/kWh、DR不参加時上限120万円、DR参加時上限なし
+      battery_per_kwh: 100000,
+      battery_cap_no_dr: 1200000,
+      battery_cap_dr: null,       // null = 上限なし
+      // DR実証実験加算・IoT機器加算（今回は基本計算のみ）
+      note: "東京都ZEROプログラム (クール・ネット東京) 2026年度",
+    },
+    "神奈川県": {
+      // 太陽光：7万円/kW、上限10kW（70万円）、蓄電池同時設置が条件
+      solar_per_kw: 70000,
+      solar_max_kw: 10,
+      solar_max_yen: 700000,
+      solar_requires_battery: true,
+      // 蓄電池：15万円/台（1システム=1台として計算）
+      battery_per_system: 150000,
+      note: "神奈川県住宅用再エネ補助金 (2026年度) ※太陽光は蓄電池同時設置が条件",
+    },
+    "埼玉県": {
+      // あんしん事業者認定：「県内に事業所を置く者であること」の要件あり
+      // Resolution365（神奈川拠点）は申請不可
+      prefecture_subsidy: 0,
+      note: "埼玉県補助金は適用不可（あんしん事業者の県内事業所要件により）",
+    },
+  },
+  // 市区町村補助金データ
+  // ※年度により変更される場合があります。最新情報は各自治体HPをご確認ください。
+  // ※住宅向け蓄電池補助金がある自治体のみ掲載（確認できなかった自治体は対象外として表示）
+  cities: {
+    "神奈川県": [
+      { name: "（選択してください）", battery: 0, note: "" },
+      { name: "横浜市", battery: 0, note: "横浜市独自補助金は横浜市HPをご確認ください" },
+      { name: "川崎市", battery: 0, note: "川崎市独自補助金は川崎市HPをご確認ください" },
+      { name: "相模原市", battery: 0, note: "相模原市HPをご確認ください" },
+      { name: "横須賀市", battery: 0, note: "横須賀市HPをご確認ください" },
+      { name: "平塚市", battery: 0, note: "平塚市HPをご確認ください" },
+      { name: "鎌倉市", battery: 0, note: "鎌倉市HPをご確認ください" },
+      { name: "藤沢市", battery: 0, note: "藤沢市HPをご確認ください" },
+      { name: "小田原市", battery: 0, note: "小田原市HPをご確認ください" },
+      { name: "茅ヶ崎市", battery: 0, note: "茅ヶ崎市HPをご確認ください" },
+      { name: "逗子市", battery: 0, note: "逗子市HPをご確認ください" },
+      { name: "三浦市", battery: 0, note: "三浦市HPをご確認ください" },
+      { name: "秦野市", battery: 0, note: "秦野市HPをご確認ください" },
+      { name: "厚木市", battery: 0, note: "厚木市HPをご確認ください" },
+      { name: "大和市", battery: 0, note: "大和市HPをご確認ください" },
+      { name: "伊勢原市", battery: 0, note: "伊勢原市HPをご確認ください" },
+      { name: "海老名市", battery: 0, note: "海老名市HPをご確認ください" },
+      { name: "座間市", battery: 0, note: "座間市HPをご確認ください" },
+      { name: "綾瀬市", battery: 0, note: "綾瀬市HPをご確認ください" },
+      { name: "葉山町", battery: 0, note: "葉山町HPをご確認ください" },
+      { name: "寒川町", battery: 0, note: "寒川町HPをご確認ください" },
+      { name: "大磯町", battery: 0, note: "大磯町HPをご確認ください" },
+      { name: "二宮町", battery: 0, note: "二宮町HPをご確認ください" },
+    ],
+    "埼玉県": [
+      { name: "（選択してください）", battery: 0, note: "" },
+      { name: "さいたま市", battery: 0, note: "さいたま市HPをご確認ください" },
+      { name: "川越市", battery: 0, note: "川越市HPをご確認ください" },
+      { name: "熊谷市", battery: 0, note: "熊谷市HPをご確認ください" },
+      { name: "川口市", battery: 0, note: "川口市HPをご確認ください" },
+      { name: "行田市", battery: 0, note: "行田市HPをご確認ください" },
+      { name: "所沢市", battery: 0, note: "所沢市HPをご確認ください" },
+      { name: "春日部市", battery: 0, note: "春日部市HPをご確認ください" },
+      { name: "狭山市", battery: 0, note: "狭山市HPをご確認ください" },
+      { name: "上尾市", battery: 0, note: "上尾市HPをご確認ください" },
+      { name: "草加市", battery: 0, note: "草加市HPをご確認ください" },
+      { name: "越谷市", battery: 0, note: "越谷市HPをご確認ください" },
+      { name: "蕨市", battery: 0, note: "蕨市HPをご確認ください" },
+      { name: "戸田市", battery: 0, note: "戸田市HPをご確認ください" },
+      { name: "入間市", battery: 0, note: "入間市HPをご確認ください" },
+      { name: "朝霞市", battery: 0, note: "朝霞市HPをご確認ください" },
+      { name: "志木市", battery: 0, note: "志木市HPをご確認ください" },
+      { name: "和光市", battery: 0, note: "和光市HPをご確認ください" },
+      { name: "新座市", battery: 0, note: "新座市HPをご確認ください" },
+      { name: "桶川市", battery: 0, note: "桶川市HPをご確認ください" },
+      { name: "久喜市", battery: 0, note: "久喜市HPをご確認ください" },
+      { name: "北本市", battery: 0, note: "北本市HPをご確認ください" },
+      { name: "富士見市", battery: 0, note: "富士見市HPをご確認ください" },
+      { name: "ふじみ野市", battery: 0, note: "ふじみ野市HPをご確認ください" },
+      { name: "三郷市", battery: 0, note: "三郷市HPをご確認ください" },
+      { name: "蓮田市", battery: 0, note: "蓮田市HPをご確認ください" },
+      { name: "坂戸市", battery: 0, note: "坂戸市HPをご確認ください" },
+      { name: "幸手市", battery: 0, note: "幸手市HPをご確認ください" },
+      { name: "鶴ヶ島市", battery: 0, note: "鶴ヶ島市HPをご確認ください" },
+      { name: "日高市", battery: 0, note: "日高市HPをご確認ください" },
+      { name: "吉川市", battery: 0, note: "吉川市HPをご確認ください" },
+      { name: "白岡市", battery: 0, note: "白岡市HPをご確認ください" },
+    ],
+  },
+};
+
+// ========== 補助金計算 ==========
+function calcSubsidy() {
+  const pref = str('prefecture');
+  const city = str('city');
+  const dr   = str('dr_participation') === 'あり';
+  const battery_kwh  = num('battery_kwh');
+  const battery_cost = num('battery_cost');
+  const solar_kw     = num('solar_kw');
+  const config       = str('config');
+  const has_solar    = (config === '太陽光のみ' || config === '両方');
+  const has_battery  = (config === '蓄電池のみ' || config === '両方');
+
+  let national = 0;
+  let pref_sub = 0;
+  let city_sub = 0;
+  let breakdown = [];
+  let show_dr_warning = false;
+  let show_kanagawa_note = false;
+  let show_saitama_note = false;
+
+  // ---- 国DR補助金 ----
+  // 出典：SII 令和6年度・令和7年度 家庭用蓄電池DR補助金
+  // 計算式：min(蓄電池費用×1/3, kWh×3.7万) 上限60万
+  if (has_battery && battery_kwh > 0 && battery_cost > 0) {
+    const dr_by_cost = battery_cost / 3;
+    const dr_by_kwh  = battery_kwh * 37000;
+    national = Math.min(dr_by_cost, dr_by_kwh, 600000);
+    national = Math.round(national);
+    if (national > 0) {
+      breakdown.push(`国DR補助金：min(費用${fmt(battery_cost)}÷3, ${battery_kwh}kWh×3.7万) → ${fmt(national)}`);
+      show_dr_warning = true;
+    }
+  }
+
+  // ---- 都道府県補助金 ----
+  if (pref === "東京都") {
+    if (has_battery && battery_kwh > 0) {
+      const raw = battery_kwh * 100000;
+      const cap = dr ? null : 1200000;
+      pref_sub = cap ? Math.min(raw, cap) : raw;
+      pref_sub = Math.round(pref_sub);
+      const capNote = dr ? "上限なし（DR参加）" : `上限120万円（DR不参加）`;
+      breakdown.push(`東京都 蓄電池：${battery_kwh}kWh×10万/kWh = ${fmt(raw)}　${capNote} → ${fmt(pref_sub)}`);
+    }
+    // DR参加時の加算補助（端末設置+15万円 / 端末レス+10万円）
+    if (dr && has_battery) {
+      const drType = str('dr_type') || '端末設置';
+      const drBonus = (drType === '端末設置') ? 150000 : 100000;
+      pref_sub += drBonus;
+      breakdown.push(`東京都 DR加算（${drType}）：+${fmt(drBonus)}`);
+    }
+    // 東京都 太陽光補助金（既存住宅）
+    // 出典：クール・ネット東京 令和8年度 断熱・太陽光住宅普及拡大事業
+    // 3.75kW以下：15万円/kW（上限45万円）／ 3.75kW超：12万円/kW
+    if (has_solar && solar_kw > 0) {
+      const threshold = 3.75;
+      let solar_sub_tokyo = 0;
+      if (solar_kw <= threshold) {
+        solar_sub_tokyo = Math.min(Math.round(solar_kw * 150000), 450000);
+        breakdown.push(`東京都 太陽光：${solar_kw}kW×15万/kW = ${fmt(solar_sub_tokyo)}（上限45万円）`);
+      } else {
+        const low_part  = 450000; // 3.75kW × 15万
+        const high_part = Math.round((solar_kw - threshold) * 120000);
+        solar_sub_tokyo = low_part + high_part;
+        breakdown.push(`東京都 太陽光：3.75kW×15万 + ${(solar_kw - threshold).toFixed(2)}kW×12万 = ${fmt(solar_sub_tokyo)}`);
+      }
+      pref_sub += solar_sub_tokyo;
+    }
+  } else if (pref === "神奈川県") {
+    show_kanagawa_note = true;
+    let solar_sub = 0;
+    let bat_sub   = 0;
+    // 太陽光補助（蓄電池同時設置が条件）
+    if (has_solar && has_battery && solar_kw > 0) {
+      const kw_capped = Math.min(solar_kw, 10);
+      solar_sub = Math.round(kw_capped * 70000);
+      breakdown.push(`神奈川県・太陽光：${kw_capped.toFixed(1)}kW×7万/kW = ${fmt(solar_sub)}（蓄電池同時設置条件）`);
+    } else if (has_solar && !has_battery && solar_kw > 0) {
+      breakdown.push(`神奈川県・太陽光：蓄電池同時設置が条件のため対象外`);
+    }
+    // 蓄電池補助（1台固定）
+    if (has_battery) {
+      bat_sub = 150000;
+      breakdown.push(`神奈川県・蓄電池：1台×15万 = ${fmt(bat_sub)}`);
+    }
+    pref_sub = solar_sub + bat_sub;
+  } else if (pref === "埼玉県") {
+    show_saitama_note = true;
+    pref_sub = 0;
+    breakdown.push(`埼玉県：あんしん事業者（県内事業所）要件のため当社は申請不可 → ¥0`);
+  }
+
+  // ---- 市区町村補助金 ----
+  if (pref && SUBSIDY_DATA.cities[pref]) {
+    const cityList = SUBSIDY_DATA.cities[pref];
+    const found = cityList.find(c => c.name === city);
+    if (found && found.battery > 0 && has_battery) {
+      city_sub = found.battery;
+      breakdown.push(`${city}：蓄電池補助金 ${fmt(city_sub)}　${found.note}`);
+    }
+  }
+
+  return {
+    national, pref: pref_sub, city: city_sub,
+    breakdown, show_dr_warning, show_kanagawa_note, show_saitama_note,
+    pref_name: pref
+  };
+}
+
+// ========== 夜間蓄電モード ==========
+function onArbModeChange() {
+  const isManual = str('arbitrage_mode') === 'manual';
+  $('arb-auto-panel').classList.toggle('hidden', isManual);
+  $('arb-manual-panel').classList.toggle('hidden', !isManual);
+  calc();
+}
+
+// ========== 蓄電池メーカー・型式 ==========
+function onBatteryMakerChange() {
+  const maker = str('battery_maker');
+  const modelSel = $('battery_model');
+  modelSel.innerHTML = '';
+
+  if (maker && BATTERY_MODELS[maker] && BATTERY_MODELS[maker].length > 0) {
+    const defOpt = document.createElement('option');
+    defOpt.value = '';
+    defOpt.textContent = '型式を選択してください';
+    modelSel.appendChild(defOpt);
+    BATTERY_MODELS[maker].forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m.model;
+      opt.textContent = `${m.model}（${m.catalog_kwh}kWh / 実効${m.effective_kwh}kWh / PCS ${m.powercon_kw}kW）`;
+      modelSel.appendChild(opt);
+    });
+  } else if (maker) {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = '（準備中）';
+    modelSel.appendChild(opt);
+  } else {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = 'メーカーを先に選択してください';
+    modelSel.appendChild(opt);
+  }
+  // モデルがリセットされたので実効容量もクリア
+  $('battery_kwh_effective').value = '';
+  calc();
+}
+
+function onBatteryModelChange() {
+  const maker = str('battery_maker');
+  const model = str('battery_model');
+  if (maker && model && BATTERY_MODELS[maker]) {
+    const found = BATTERY_MODELS[maker].find(m => m.model === model);
+    if (found) {
+      $('battery_kwh').value = found.catalog_kwh;
+      $('battery_kwh_effective').value = found.effective_kwh;
+      calc();
+      return;
+    }
+  }
+  $('battery_kwh_effective').value = '';
+  calc();
+}
+
+// 手動でkWh入力した場合はモデル選択をリセット
+function onBatteryKwhManualInput() {
+  $('battery_maker').value = '';
+  $('battery_model').innerHTML = '<option value="">メーカーを先に選択してください</option>';
+  $('battery_kwh_effective').value = '';
+  calc();
+}
+
+// 都道府県変更時に市区町村ドロップダウンを更新
+function onPrefectureChange() {
+  const pref = str('prefecture');
+  const citySel = $('city');
+  const cityRow = $('city-row');
+
+  // 東京都は市区町村補助金なし → 欄を非表示
+  if (cityRow) cityRow.classList.toggle('hidden', pref === '東京都');
+
+  citySel.innerHTML = '';
+  if (SUBSIDY_DATA.cities[pref]) {
+    SUBSIDY_DATA.cities[pref].forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.name;
+      opt.textContent = c.name;
+      citySel.appendChild(opt);
+    });
+  } else {
+    const opt = document.createElement('option');
+    opt.value = '';
+    opt.textContent = pref ? '（この都道府県は補助金計算対象外）' : '都道府県を先に選択してください';
+    citySel.appendChild(opt);
+  }
+  calc();
+}
+
+// 補助金手動入力の切り替え
+let subsidyManualMode = false;
+function toggleSubsidyManual() {
+  subsidyManualMode = !subsidyManualMode;
+  $('subsidy-auto-display').classList.toggle('hidden', subsidyManualMode);
+  $('subsidy-manual-inputs').classList.toggle('hidden', !subsidyManualMode);
+  $('subsidy-toggle-btn').textContent = subsidyManualMode ? '自動計算に戻す' : '手動入力に切り替え';
+  if (!subsidyManualMode) calc(); // 自動計算に戻したとき再計算
+}
+
+function onDrChange() {
+  const dr = str('dr_participation') === 'あり';
+  const row = $('dr-type-row');
+  if (row) row.classList.toggle('hidden', !dr);
+  calc();
+}
+
+function onManualSubsidyChange() {
+  const n = parseFloat($('subsidy_national_manual').value) || 0;
+  const p = parseFloat($('subsidy_pref_manual').value) || 0;
+  const c = parseFloat($('subsidy_city_manual').value) || 0;
+  $('subsidy_national').value = n;
+  $('subsidy_pref').value     = p;
+  $('subsidy_city').value     = c;
+  calc();
+}
+
+// ========== ログイン ==========
+function handleLogin(e) {
+  e.preventDefault();
+  const input = document.getElementById('password-input').value;
+  if (input === APP_PASSWORD) {
+    sessionStorage.setItem('authed', '1');
+    document.getElementById('login-screen').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    calc();
+  } else {
+    document.getElementById('login-error').classList.remove('hidden');
+  }
+}
+
+function logout() {
+  sessionStorage.removeItem('authed');
+  location.reload();
+}
+
+if (sessionStorage.getItem('authed') === '1') {
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+}
+
+// ========== グラフ ==========
+let cumChartInstance = null;
+
+function drawCumChart(dataPoints) {
+  const ctx = document.getElementById('cumChart');
+  if (!ctx) return;
+  const labels = dataPoints.map(d => d.year + '年目');
+  const values = dataPoints.map(d => Math.round(d.cum / 10000));
+  const colors = values.map(v => v >= 0 ? 'rgba(16,185,129,0.8)' : 'rgba(239,68,68,0.7)');
+
+  if (cumChartInstance) {
+    cumChartInstance.data.labels = labels;
+    cumChartInstance.data.datasets[0].data = values;
+    cumChartInstance.data.datasets[0].backgroundColor = colors;
+    cumChartInstance.data.datasets[0].borderColor = colors;
+    cumChartInstance.update();
+    return;
+  }
+  cumChartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: '累積収支（万円）',
+        data: values,
+        backgroundColor: colors,
+        borderColor: colors,
+        borderWidth: 1,
+        borderRadius: 3,
+      }, {
+        label: '損益分岐ライン',
+        data: Array(dataPoints.length).fill(0),
+        type: 'line',
+        borderColor: 'rgba(100,116,139,0.5)',
+        borderWidth: 1.5,
+        borderDash: [4, 4],
+        pointRadius: 0,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => (ctx.datasetIndex === 0 ? `累積収支: ${ctx.raw}万円` : '損益分岐点'),
+          }
+        }
+      },
+      scales: {
+        y: {
+          ticks: { callback: v => v + '万円', font: { size: 10 } },
+          grid: { color: 'rgba(0,0,0,0.05)' }
+        },
+        x: {
+          ticks: {
+            font: { size: 9 },
+            maxRotation: 0,
+            callback: (val, idx) => (idx % 5 === 0 || idx === dataPoints.length - 1) ? labels[idx] : ''
+          },
+          grid: { display: false }
+        }
+      }
+    }
+  });
+}
+
+// ========== ヘルパー ==========
+const $ = id => document.getElementById(id);
+const num = id => parseFloat($(id).value) || 0;
+const str = id => $(id).value;
+const fmt = v => '¥' + Math.round(v).toLocaleString('ja-JP');
+const fmtSigned = v => (v >= 0 ? '+' : '') + '¥' + Math.round(v).toLocaleString('ja-JP');
+const fmtKwh = v => v.toFixed(2) + ' kWh';
+
+function onCompanyChange() {
+  const company = str('power_company');
+  const plans = COMPANY_PLANS[company] || COMPANY_PLANS["東京電力EP"];
+  const planSel = $('plan');
+  const prev = planSel.value;
+  planSel.innerHTML = plans.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+  // 同名プランがあれば保持
+  if (plans.some(p => p.name === prev)) planSel.value = prev;
+  onPlanChange();
+}
+
+function onPlanChange() {
+  const company = str('power_company');
+  const plan = str('plan');
+  const plans = COMPANY_PLANS[company] || COMPANY_PLANS["東京電力EP"];
+  const found = plans.find(p => p.name === plan);
+  const rates = found ? found.rates : (PLAN_RATES[plan] || { avg: 36, night: 36, peak: 36 });
+  const ch = found && found.cheap_hours;
+  const chStr = ch
+    ? `　安値時間帯 ${ch.start}時〜${ch.end}時（${ch.count}時間）`
+    : '';
+  $('plan-info').textContent = `参考単価：購入 ¥${rates.avg}/kWh　安値 ¥${rates.night}/kWh　高値 ¥${rates.peak}/kWh${chStr}`;
+  calc();
+}
+
+function onPaymentMethodChange() {
+  const isLump = str('payment_method') === '一括';
+  $('loan-fields').classList.toggle('hidden', isLump);
+  $('lump-sum-fields').classList.toggle('hidden', !isLump);
+  onFormChange();
+}
+
+function onInstallYearChange() {
+  const year = parseInt(str('install_year')) || 0;
+  if (year === 0) return;
+  const price = FIT_PRICE_BY_YEAR[year] || 0;
+  $('fit_price').value = price;
+  onFormChange();
+}
+
+function onFamilyChange() {
+  const fs = parseInt(str('family_size')) || 4;
+  const avg = FAMILY_AVG_KWH[fs] || 436;
+  const labels = { 1: "1人", 2: "2人", 3: "3人", 4: "4人", 5: "5人以上" };
+  $('family-info').textContent = `参考：${labels[fs]}世帯の月平均使用量は約${avg}kWh`;
+  calc();
+}
+
+function pmt(rate, nper, pv) {
+  if (rate === 0) return -pv / nper;
+  return -pv * rate * Math.pow(1 + rate, nper) / (Math.pow(1 + rate, nper) - 1);
+}
+
+// ========== 物理モデル：太陽光→自家消費→蓄電池→売電の優先順位で計算 ==========
+// 日中（10-15時）の家庭消費比率を世帯人数と在宅状況から動的に決定
+// データ出典：資源エネルギー庁・電力会社の家庭消費パターン調査
+const FAMILY_AVG_KWH = { 1: 219, 2: 331, 3: 386, 4: 436, 5: 470 };
+const DAYTIME_SHARE_TABLE = {
+  // 世帯人数 × 在宅状況 → 10-15時(5時間)の消費が全体の何割か
+  // 共働きで日中不在が多い家庭は10%程度、在宅率高い世帯でも30%程度
+  "不在多い": { 1: 0.08, 2: 0.10, 3: 0.12, 4: 0.13, 5: 0.14 },
+  "半々":     { 1: 0.15, 2: 0.18, 3: 0.20, 4: 0.21, 5: 0.22 },
+  "在宅多い": { 1: 0.22, 2: 0.26, 3: 0.28, 4: 0.30, 5: 0.32 }
+};
+
+function getDaytimeShare(occupancy, family_size) {
+  const fs = Math.min(5, Math.max(1, family_size));
+  const occ = DAYTIME_SHARE_TABLE[occupancy] || DAYTIME_SHARE_TABLE["半々"];
+  return occ[fs] || 0.20;
+}
+
+function computeSystemOutput(solar_kwh_year, battery_kwh, daily_total_consume, daytime_share, effective_kwh) {
+  const DAYTIME_SHARE = daytime_share || 0.20;
+  if (daily_total_consume <= 0) {
+    return { daily_solar: 0, daily_direct: 0, daily_charged: 0,
+             daily_discharge: 0, daily_self: 0, daily_sell: 0,
+             daily_grid_buy: 0, battery_eff: 0,
+             daytime_consume: 0, night_consume: 0, surplus: 0 };
+  }
+  const daily_solar = (solar_kwh_year > 0 ? solar_kwh_year : 0) / 365;
+  const daytime_consume = daily_total_consume * DAYTIME_SHARE;
+  const night_consume = daily_total_consume * (1 - DAYTIME_SHARE);
+  // ① 太陽光が直接、日中の消費を相殺（自家消費・優先1位）
+  const direct = Math.min(daily_solar, daytime_consume);
+  const surplus = Math.max(0, daily_solar - direct);
+  // ② 余った分を蓄電池に充電（優先2位）
+  // effective_kwh が指定されていればそれを使用（メーカー実効容量）、なければカタログ値×DOD
+  const battery_eff = effective_kwh !== undefined
+    ? (effective_kwh > 0 ? effective_kwh : 0)
+    : (battery_kwh > 0 ? battery_kwh : 0) * DOD;
+  const charged = Math.min(surplus, battery_eff);
+  // ③ 蓄電池が満充電になった残り余剰分のみ売電（優先3位）
+  const sell = surplus - charged;
+  // ④ 蓄電池は夜間消費を補う（足りない分はグリッドから購入）
+  const discharge = Math.min(charged, night_consume);
+  const day_grid = Math.max(0, daytime_consume - direct);
+  const night_grid = Math.max(0, night_consume - discharge);
+  return {
+    daily_solar, daily_direct: direct, daily_charged: charged,
+    daily_discharge: discharge, daily_self: direct + discharge,
+    daily_sell: sell, daily_grid_buy: day_grid + night_grid,
+    battery_eff, daytime_consume, night_consume, surplus
+  };
+}
+
+// 既存システムの自家消費を考慮して、家庭の総消費量を逆算（反復解法）
+function estimateTotalConsumption(monthly_kwh, has_existing, ex_gen, ex_battery, daytime_share) {
+  const base = monthly_kwh / 30;
+  if (!has_existing || (ex_gen <= 0 && ex_battery <= 0)) return base;
+  let t = base;
+  for (let i = 0; i < 10; i++) {
+    const out = computeSystemOutput(ex_gen, ex_battery, t, daytime_share);
+    const next = base + out.daily_self;
+    if (Math.abs(next - t) < 0.01) break;
+    t = next;
+  }
+  return t;
+}
+
+// ========== 計算 ==========
+function calc() {
+  const monthly_bill = num('monthly_bill');
+  const monthly_kwh = num('monthly_kwh');
+  const plan = str('plan');
+  const rates = PLAN_RATES[plan] || PLAN_RATES["従量電灯B"];
+  // プランの安値時間帯情報を取得
+  const company = str('power_company');
+  const _cpPlans = COMPANY_PLANS[company] || COMPANY_PLANS["東京電力EP"];
+  const _foundPlan = _cpPlans ? _cpPlans.find(p => p.name === plan) : null;
+  const plan_cheap_hours = _foundPlan ? _foundPlan.cheap_hours : null;
+
+  const buy_manual = num('buy_price_manual');
+  const night_manual = num('night_price_manual');
+  const peak_manual = num('peak_price_manual');
+
+  // 実効単価（月額÷月間kWh）。異常値は除外（既存設置ありで月間kWhが少ない場合に高騰するのを防ぐ）
+  const raw_effective = monthly_kwh > 0 ? monthly_bill / monthly_kwh : rates.avg;
+  const effective_price = Math.min(raw_effective, rates.avg * 1.5); // 計画単価の1.5倍を上限
+  const buy_price = buy_manual > 0 ? buy_manual : Math.max(rates.avg, effective_price);
+  const night_price = night_manual > 0 ? night_manual : rates.night;
+  const peak_price = peak_manual > 0 ? peak_manual : rates.peak;
+
+  const has_existing = str('has_existing') === 'はい';
+  const ex_solar_kw = has_existing ? num('existing_solar_kw') : 0;
+  const ex_gen = has_existing ? num('existing_gen') : 0;
+  const ex_battery = has_existing ? num('existing_battery') : 0;
+
+  const config = str('config');
+  const solar_replaced = (config === '太陽光のみ' || config === '両方') ? 1 : 0;
+  const battery_replaced = (config === '蓄電池のみ' || config === '両方') ? 1 : 0;
+  const new_solar_kw = num('solar_kw');
+  const new_battery_kwh = num('battery_kwh');
+  const manual_gen = num('manual_gen');
+
+  const auto_new_gen = solar_replaced * new_solar_kw * INSOLATION;
+  const new_solar_gen = manual_gen > 0 ? manual_gen : auto_new_gen;
+
+  const final_solar_kw = solar_replaced ? new_solar_kw : ex_solar_kw;
+  const final_solar_gen = solar_replaced ? new_solar_gen : ex_gen;
+  const final_battery = battery_replaced ? new_battery_kwh : ex_battery;
+
+  // メーカー型式が選択されている場合は実効容量を使用
+  const eff_input = num('battery_kwh_effective');
+  const final_battery_effective = battery_replaced && eff_input > 0
+    ? eff_input
+    : final_battery * DOD;
+
+  // ========== 物理モデルで計算 ==========
+  // 0) 家族人数と在宅状況から昼間消費比率を動的決定
+  const family_size = parseInt(str('family_size')) || 4;
+  const daytime_occupancy = str('daytime_occupancy') || "半々";
+  const daytime_share = getDaytimeShare(daytime_occupancy, family_size);
+  // 1) 既存ありの場合は、家庭の総消費量を逆算（既存の自家消費を考慮）
+  const total_consume_daily = estimateTotalConsumption(monthly_kwh, has_existing, ex_gen, ex_battery, daytime_share);
+  // 2) 施工後システムでの太陽光・蓄電池の動き（新規蓄電池はメーカー実効容量を使用）
+  const new_out = computeSystemOutput(final_solar_gen, final_battery, total_consume_daily, daytime_share,
+    battery_replaced ? final_battery_effective : undefined);
+  // 3) 既存システムでの動き（売電収入の比較に使用）
+  const ex_out = computeSystemOutput(ex_gen, ex_battery, total_consume_daily, daytime_share);
+
+  // 夜間蓄電モード：太陽光自家消費とは独立した別サイクル（安い夜間電力を蓄えて昼間に活用）
+  const economy_mode = str('economy_mode') === 'はい' ? 1 : 0;
+  const final_battery_eff = final_battery_effective;
+
+  // ---- 最適夜間充電量の自動計算 ----
+  // 考え方：安値帯（例：午前1〜6時）に充電 → 高値時間帯のグリッド購入を代替
+  // 蓄電池の残余容量（太陽光充電後の空き）= 実効容量 − 太陽光充電分
+  const solar_charged = new_out.daily_charged;
+  const remaining_battery = Math.max(0, final_battery_eff - solar_charged);
+  const total_grid_buy = new_out.daily_grid_buy;
+  // プランに安値時間帯がある場合：総購入量のうち安値帯の割合は既に安い→差分が縮小
+  // expensive_fraction = 安値時間帯以外の時間割合（例: スマートライフ5h安値 → 19/24が高値）
+  const cheap_fraction = plan_cheap_hours ? (plan_cheap_hours.count / 24) : 0;
+  const expensive_grid_buy = total_grid_buy * (1 - cheap_fraction);
+  const auto_arbitrage = Math.min(expensive_grid_buy, remaining_battery);
+
+  // 自動 or 手動モード
+  const arb_mode = str('arbitrage_mode');
+  const arbitrage_kwh = (arb_mode === 'manual') ? num('arbitrage_kwh') : auto_arbitrage;
+
+  // 自動計算パネルの表示を更新
+  if (arb_mode !== 'manual') {
+    const hasBat = final_battery_eff > 0;
+    const arbNoBat = $('arb-no-battery');
+    if (arbNoBat) arbNoBat.classList.toggle('hidden', hasBat);
+    const el = id => $(id);
+    const chLabel = plan_cheap_hours
+      ? `${plan_cheap_hours.start}時〜${plan_cheap_hours.end}時（${plan_cheap_hours.count}h安値）`
+      : '時間帯別なし';
+    if (el('arb-daytime-consume')) el('arb-daytime-consume').textContent = hasBat ? total_grid_buy.toFixed(2) + ' kWh' : '—';
+    if (el('arb-solar-cover'))     el('arb-solar-cover').textContent     = hasBat ? solar_charged.toFixed(2) + ' kWh' : '—';
+    if (el('arb-battery-eff'))     el('arb-battery-eff').textContent     = hasBat ? remaining_battery.toFixed(1) + ' kWh' : '—';
+    if (el('arb-cheap-label'))     el('arb-cheap-label').textContent     = chLabel;
+    if (el('arb-expensive-buy'))   el('arb-expensive-buy').textContent   = hasBat ? expensive_grid_buy.toFixed(2) + ' kWh' : '—';
+    if (el('arb-optimal'))         el('arb-optimal').textContent         = hasBat ? auto_arbitrage.toFixed(2) + ' kWh/日' : '— kWh/日';
+  }
+
+  const arbitrage_actual = economy_mode * Math.min(arbitrage_kwh, final_battery_eff);
+  const arbitrage_save = arbitrage_actual * 365 * (peak_price - night_price);
+
+  // 売電単価
+  const fit = num('fit_price');
+
+  // 月々の電気代（施工後）
+  const new_monthly_bill = new_out.daily_grid_buy * 30 * buy_price;
+  const monthly_savings = monthly_bill - new_monthly_bill; // 月々の電気代削減額
+
+  // 売電収入（施工後の絶対値）
+  const new_sell_revenue = new_out.daily_sell * 365 * fit;
+  const ex_sell_revenue = ex_out.daily_sell * 365 * fit;
+
+  // 内訳表示用
+  const solar_self_savings = monthly_savings * 12; // 電気代削減（年）
+  const solar_sell_revenue = new_sell_revenue;
+  const battery_savings = 0; // 物理モデルではbatteryもsolar_selfと一体化済み
+
+  // 年間総メリット
+  // = 電気代削減 + (新規売電 - 既存売電) + 経済モード節約
+  const sell_revenue_delta = new_sell_revenue - ex_sell_revenue;
+  const total_annual = (monthly_savings * 12) + sell_revenue_delta + arbitrage_save;
+  const total_monthly_benefit = total_annual / 12;
+  const annual_savings_amt = monthly_savings * 12;
+
+  // 表示用：1日の余り（売電できなかった売電待機分）
+  const new_grid_use_daily = new_out.daily_grid_buy;
+  const solar_self_use_daily = new_out.daily_self; // 直接＋蓄電池経由の合計
+  const solar_sell_daily = new_out.daily_sell;
+  const battery_offset_daily = new_out.daily_discharge;
+
+  const total_equip = solar_replaced * num('solar_cost') + battery_replaced * num('battery_cost') + num('install_cost');
+
+  // ---- 補助金自動計算（手動モード以外） ----
+  if (!subsidyManualMode) {
+    const sub = calcSubsidy();
+    $('subsidy_national').value = sub.national;
+    $('subsidy_pref').value     = sub.pref;
+    $('subsidy_city').value     = sub.city;
+
+    // パネル表示切り替え
+    const hasPref = sub.pref_name && sub.pref_name !== 'その他' && sub.pref_name !== '';
+    $('subsidy-no-pref').classList.toggle('hidden', hasPref);
+    $('subsidy-calc-panel').classList.toggle('hidden', !hasPref);
+
+    if (hasPref) {
+      const totalSub = sub.national + sub.pref + sub.city;
+      $('auto-sub-national').textContent = fmt(sub.national);
+      $('auto-sub-pref').textContent     = fmt(sub.pref);
+      $('auto-sub-city').textContent     = fmt(sub.city);
+      $('auto-sub-total').textContent    = fmt(totalSub);
+
+      // 内訳テキスト
+      const detailEl = $('subsidy-detail');
+      if (sub.breakdown.length > 0) {
+        detailEl.innerHTML = sub.breakdown.map(t => `<div>・${t}</div>`).join('');
+        detailEl.classList.remove('hidden');
+      } else {
+        detailEl.innerHTML = '';
+        detailEl.classList.add('hidden');
+      }
+
+      // 各注記の表示
+      $('dr-end-warning').classList.toggle('hidden', !sub.show_dr_warning);
+      $('kanagawa-note').classList.toggle('hidden', !sub.show_kanagawa_note);
+      $('saitama-note').classList.toggle('hidden', !sub.show_saitama_note);
+
+      // 市区町村補助金の注記
+      const hasCitySub = sub.city > 0;
+      const cityNoteEl = $('city-sub-note');
+      if (cityNoteEl) cityNoteEl.classList.toggle('hidden', !hasCitySub);
+
+      // 結果セクションのDR警告
+      const rDrWarn = $('r-dr-warning');
+      if (rDrWarn) rDrWarn.classList.toggle('hidden', !sub.show_dr_warning);
+    }
+  }
+
+  const total_subsidy = num('subsidy_national') + num('subsidy_pref') + num('subsidy_city');
+  const net_cost = total_equip - total_subsidy;
+  const isLumpSum = str('payment_method') === '一括';
+  const auto_loan = isLumpSum ? 0 : Math.max(0, net_cost - num('own_funds'));
+  const loan_principal = isLumpSum ? 0 : (num('manual_loan') > 0 ? num('manual_loan') : auto_loan);
+
+  const loan_rate = num('loan_rate_pct') / 100;
+  const loan_years = isLumpSum ? 0 : num('loan_years');
+  const loan_method = str('loan_method');
+
+  let monthly_pmt = 0;
+  if (!isLumpSum && loan_principal > 0 && loan_years > 0) {
+    if (loan_method === '元金均等') {
+      const total_int = loan_principal * loan_rate * (loan_years * 12 + 1) / 24;
+      monthly_pmt = (loan_principal + total_int) / (loan_years * 12);
+    } else {
+      monthly_pmt = pmt(loan_rate / 12, loan_years * 12, -loan_principal);
+    }
+  }
+
+  const simple_payback = total_annual > 0 ? net_cost / total_annual : 0;
+  const net_monthly = total_monthly_benefit - monthly_pmt;
+
+  const elec_inflation = num('elec_inflation_pct') / 100;
+  const degradation = num('degradation_pct') / 100;
+  let cum25 = -net_cost;
+  for (let i = 0; i < USEFUL_LIFE; i++) {
+    const elec_save_y = (monthly_savings * 12) * Math.pow(1 - degradation, i) * Math.pow(1 + elec_inflation, i);
+    const sell_y = (i + 1 <= FIT_YEARS)
+      ? sell_revenue_delta * Math.pow(1 - degradation, i)
+      : sell_revenue_delta * Math.pow(1 - degradation, i) * 0.5;
+    const arb_y = arbitrage_save * Math.pow(1 + elec_inflation, i);
+    const loan_y = (i + 1 <= loan_years) ? -monthly_pmt * 12 : 0;
+    cum25 += elec_save_y + sell_y + arb_y + loan_y;
+  }
+  const roi_25 = net_cost > 0 ? cum25 / net_cost : 0;
+
+  // 施工内容テキスト
+  let solar_status = "太陽光なし";
+  if (solar_replaced) {
+    solar_status = ex_solar_kw > 0
+      ? `既存${ex_solar_kw.toFixed(1)}kW → 新規${new_solar_kw.toFixed(1)}kW に置き換え`
+      : `新規${new_solar_kw.toFixed(1)}kW を設置`;
+  } else if (ex_solar_kw > 0) {
+    solar_status = `既存${ex_solar_kw.toFixed(1)}kW を維持`;
+  }
+  let battery_status = "蓄電池なし";
+  if (battery_replaced) {
+    battery_status = ex_battery > 0
+      ? `既存${ex_battery.toFixed(1)}kWh → 新規${new_battery_kwh.toFixed(1)}kWh に置き換え`
+      : `新規${new_battery_kwh.toFixed(1)}kWh を設置`;
+  } else if (ex_battery > 0) {
+    battery_status = `既存${ex_battery.toFixed(1)}kWh を維持`;
+  }
+
+  // ========== 表示更新 ==========
+  // ヘッダー
+  $('r-customer-name').textContent = 'お客様名：' + ($('customer_name').value || '—');
+  $('r-staff').textContent = $('staff_name').value || '—';
+  const today = new Date();
+  $('r-date').textContent = `${today.getFullYear()}年${today.getMonth()+1}月${today.getDate()}日`;
+
+  // 施工内容
+  $('r-solar-status').textContent = solar_status;
+  $('r-battery-status').textContent = battery_status;
+
+  // ① 電気代削減
+  $('r-current-bill').textContent = fmt(monthly_bill);
+  $('r-new-bill').textContent = fmt(new_monthly_bill);
+  $('r-monthly-savings').textContent = fmt(monthly_savings);
+  $('r-annual-savings').textContent = fmt(monthly_savings * 12);
+
+  $('calc-daily-use').textContent = fmtKwh(total_consume_daily);
+  $('calc-daytime-share').textContent = `(${(daytime_share * 100).toFixed(0)}%)`;
+  $('calc-daytime-consume').textContent = fmtKwh(new_out.daytime_consume);
+  $('calc-night-consume').textContent = fmtKwh(new_out.night_consume);
+  $('calc-daily-solar-gen').textContent = fmtKwh(new_out.daily_solar);
+  $('calc-daily-solar-use').textContent = fmtKwh(new_out.daily_direct);
+  $('calc-daily-charge').textContent = fmtKwh(new_out.daily_charged);
+  $('calc-daily-sell').textContent = fmtKwh(new_out.daily_sell);
+  $('calc-daily-battery').textContent = fmtKwh(new_out.daily_discharge);
+  $('calc-daily-remaining').textContent = fmtKwh(new_out.daily_grid_buy);
+  $('calc-unit-price').textContent = '¥' + buy_price.toFixed(2) + '/kWh';
+
+  // 施工後の構成情報
+  $('info-final-solar').textContent = final_solar_kw.toFixed(1) + ' kW';
+  $('info-final-gen').textContent = Math.round(final_solar_gen).toLocaleString('ja-JP') + ' kWh';
+  // 蓄電池容量表示（カタログ値 vs 実効容量）
+  const battery_nominal = final_battery;
+  const battery_usable = battery_replaced && eff_input > 0 ? eff_input : battery_nominal * DOD;
+  const buEl = $('battery-usable-display');
+  if (buEl) buEl.textContent = battery_nominal > 0 ? battery_usable.toFixed(1) + ' kWh' : '—';
+  // 実効容量注記（メーカー選択時はその実効値、未選択時はカタログ×85%）
+  const buNote = $('battery-usable-note');
+  if (buNote) {
+    if (battery_replaced && eff_input > 0) {
+      buNote.textContent = '※メーカー公表実効容量';
+    } else {
+      buNote.textContent = '※カタログ値×85%で計算';
+    }
+  }
+  const infoNominal = $('info-battery-nominal');
+  const infoUsable = $('info-battery-usable');
+  if (infoNominal) infoNominal.textContent = battery_nominal > 0 ? battery_nominal.toFixed(1) + ' kWh' : '—';
+  if (infoUsable) infoUsable.textContent = battery_nominal > 0 ? battery_usable.toFixed(1) + ' kWh' : '—';
+
+  // ② 売電
+  $('r-annual-gen').textContent = Math.round(final_solar_gen).toLocaleString('ja-JP') + ' kWh';
+  $('r-self-use').textContent = Math.round(new_out.daily_self * 365).toLocaleString('ja-JP') + ' kWh';
+  $('r-sell-kwh').textContent = Math.round(new_out.daily_sell * 365).toLocaleString('ja-JP') + ' kWh';
+  $('r-sell-monthly').textContent = fmt(new_sell_revenue / 12);
+  $('r-sell-annual').textContent = fmt(new_sell_revenue);
+  // FIT未入力警告（太陽光ありかつ売電単価=0のとき表示）
+  const fitWarnEl = $('fit-price-warning');
+  if (fitWarnEl) fitWarnEl.classList.toggle('hidden', !(final_solar_kw > 0 && num('fit_price') === 0));
+  $('calc-sell-kwh').textContent = Math.round(new_out.daily_sell * 365).toLocaleString('ja-JP') + ' kWh';
+  $('calc-fit-price').textContent = '¥' + num('fit_price').toFixed(0) + '/kWh';
+
+  // ③ 夜間蓄電モード
+  if (economy_mode && arbitrage_actual > 0) {
+    $('arbitrage-active').classList.remove('hidden');
+    $('arbitrage-inactive').classList.add('hidden');
+    $('r-arb-kwh').textContent = arbitrage_actual.toFixed(2) + ' kWh/日';
+    $('r-arb-spread').textContent = '¥' + (peak_price - night_price).toFixed(2) + '/kWh';
+    $('r-arb-monthly').textContent = fmt(arbitrage_save / 12);
+    $('r-arb-annual').textContent = fmt(arbitrage_save);
+    $('calc-night-price').textContent = '¥' + night_price.toFixed(2) + '/kWh';
+    $('calc-peak-price').textContent = '¥' + peak_price.toFixed(2) + '/kWh';
+    $('calc-arb-kwh').textContent = arbitrage_actual.toFixed(2) + ' kWh';
+  } else {
+    $('arbitrage-active').classList.add('hidden');
+    $('arbitrage-inactive').classList.remove('hidden');
+  }
+
+  // 合計メリット
+  $('r-total-monthly').textContent = fmt(total_monthly_benefit);
+  $('r-total-annual').textContent = fmt(total_annual);
+  $('r-bd-bill').textContent = fmt(monthly_savings);
+  $('r-bd-sell').textContent = fmt(sell_revenue_delta / 12);
+  $('r-bd-arb').textContent = fmt(arbitrage_save / 12);
+
+  // 費用と補助金
+  $('r-cost-solar').textContent = fmt(solar_replaced * num('solar_cost'));
+  $('r-cost-battery').textContent = fmt(battery_replaced * num('battery_cost'));
+  $('r-cost-install').textContent = fmt(num('install_cost'));
+  $('r-equip').textContent = fmt(total_equip);
+  $('r-equip2').textContent = fmt(total_equip);
+  $('r-sub-national').textContent = fmt(num('subsidy_national')).replace('¥','¥');
+  $('r-sub-pref').textContent = fmt(num('subsidy_pref')).replace('¥','¥');
+  $('r-sub-city').textContent = fmt(num('subsidy_city')).replace('¥','¥');
+  $('r-subsidy').textContent = fmt(total_subsidy).replace('¥','¥');
+  $('r-subsidy2').textContent = fmt(total_subsidy).replace('¥','¥');
+  $('r-net-cost').textContent = fmt(net_cost);
+  $('r-net-cost2').textContent = fmt(net_cost);
+  $('r-own-funds').textContent = isLumpSum ? '（一括払い）' : fmt(num('own_funds')).replace('¥','¥');
+  $('r-loan-principal').textContent = isLumpSum ? '¥0（一括払い）' : fmt(loan_principal);
+  $('r-loan-cond').textContent = isLumpSum ? '一括払い（ローンなし）' : `${(loan_rate*100).toFixed(1)}%・${loan_years}年・${loan_method}`;
+  $('r-loan-monthly').textContent = isLumpSum ? '¥0' : fmt(monthly_pmt);
+  // ローン総額（金利込み）
+  const loan_total = monthly_pmt * loan_years * 12;
+  const loan_interest = loan_total - loan_principal;
+  const loanTotalEl = $('r-loan-total');
+  const loanIntEl = $('r-loan-interest');
+  if (loanTotalEl) loanTotalEl.textContent = isLumpSum ? '—（一括払い）' : (loan_principal > 0 ? fmt(loan_total) : '—');
+  if (loanIntEl) loanIntEl.textContent = isLumpSum ? '¥0' : (loan_principal > 0 ? fmt(Math.max(0, loan_interest)) : '—');
+
+  // 月々の実質収支
+  $('r-merit-monthly').textContent = fmt(total_monthly_benefit);
+  $('r-loan-disp').textContent = isLumpSum ? '¥0' : ('−' + fmt(monthly_pmt).replace('¥','¥'));
+  $('r-net-monthly').textContent = fmtSigned(net_monthly);
+
+  // 投資回収指標
+  $('r-payback').textContent = total_annual > 0 ? simple_payback.toFixed(1) + ' 年' : '— 年';
+  $('r-roi').textContent = (roi_25 * 100).toFixed(1) + '%';
+  $('r-cum25').textContent = fmt(cum25);
+
+  // 単価情報
+  $('r-buy-price').textContent = '¥' + buy_price.toFixed(2);
+  $('r-fit-price-disp').textContent = '¥' + num('fit_price').toFixed(0);
+  $('r-night-price').textContent = '¥' + night_price.toFixed(2);
+  $('r-peak-price').textContent = '¥' + peak_price.toFixed(2);
+
+  // ========== CO2削減量 ==========
+  // 環境省排出係数 0.000434 t-CO2/kWh（全国平均）
+  const co2_factor = 0.000434;
+  const co2_annual = final_solar_gen * co2_factor; // 発電量 × 排出係数
+  const co2_trees = Math.round(co2_annual / 0.0184); // スギ1本あたり年間約18.4kg吸収
+  $('r-co2').textContent = co2_annual.toFixed(2);
+  $('r-co2-trees').textContent = co2_trees.toLocaleString('ja-JP');
+
+  // ========== 25年グラフ & 卒FITシミュレーション ==========
+  const chartData = [];
+  let cumBal = -net_cost;
+  let phase1_cum = 0, phase2_cum = 0, phase3_cum = 0;
+
+  for (let i = 1; i <= USEFUL_LIFE; i++) {
+    const deg = Math.pow(1 - degradation, i - 1);
+    const inf = Math.pow(1 + elec_inflation, i - 1);
+    const elec_save_y = (monthly_savings * 12) * deg * inf;
+    // 卒FIT: 11年目以降は売電単価50%
+    const sell_y = i <= FIT_YEARS
+      ? sell_revenue_delta * deg
+      : sell_revenue_delta * deg * 0.5;
+    const arb_y = arbitrage_save * inf;
+    const loan_y = i <= loan_years ? -monthly_pmt * 12 : 0;
+    const year_total = elec_save_y + sell_y + arb_y + loan_y;
+    cumBal += year_total;
+    chartData.push({ year: i, cum: cumBal, yearBenefit: elec_save_y + sell_y + arb_y });
+
+    if (i <= 10) phase1_cum += elec_save_y + sell_y + arb_y;
+    else if (i <= 20) phase2_cum += elec_save_y + sell_y + arb_y;
+    else phase3_cum += elec_save_y + sell_y + arb_y;
+  }
+
+  drawCumChart(chartData);
+
+  // フェーズ別（隠し要素、JS互換用）
+  if ($('r-phase1-annual')) $('r-phase1-annual').textContent = fmt(phase1_cum / 10);
+  if ($('r-phase1-cum')) $('r-phase1-cum').textContent = '累計 ' + fmt(phase1_cum);
+  if ($('r-phase2-annual')) $('r-phase2-annual').textContent = fmt(phase2_cum / 10);
+  if ($('r-phase2-cum')) $('r-phase2-cum').textContent = '累計 ' + fmt(phase2_cum);
+  if ($('r-phase3-annual')) $('r-phase3-annual').textContent = fmt(phase3_cum / 5);
+  if ($('r-phase3-cum')) $('r-phase3-cum').textContent = '累計 ' + fmt(phase3_cum);
+
+  $('r-fit-after').textContent = '¥' + num('fit_price').toFixed(0) + ' → ¥' + (num('fit_price') * 0.5).toFixed(0) + ' /kWh';
+  $('r-total-revenue25').textContent = fmt(phase1_cum + phase2_cum + phase3_cum);
+
+  // 10年後・20年後・25年後の累積収支
+  const cum10_val = chartData[9]?.cum  || 0;
+  const cum20_val = chartData[19]?.cum || 0;
+  const cum25_disp = chartData[USEFUL_LIFE - 1]?.cum || 0;
+
+  function setBalEl(id, val) {
+    const el = $(id);
+    if (!el) return;
+    el.textContent = fmt(val);
+    el.style.color = val >= 0 ? '#059669' : '#dc2626';
+  }
+  setBalEl('r-cum10', cum10_val);
+  setBalEl('r-cum20', cum20_val);
+  setBalEl('r-cum25-disp', cum25_disp);
+
+  saveState();
+}
+
+// ========== PDF出力 ==========
+function downloadPdf() {
+  // お客様名 + 日付からファイル名生成
+  const customerName = $('customer_name').value.trim() || 'お客様';
+  const today = new Date();
+  const dateStr = `${today.getFullYear()}${String(today.getMonth()+1).padStart(2,'0')}${String(today.getDate()).padStart(2,'0')}`;
+  const filename = `${customerName}_試算結果_${dateStr}.pdf`;
+
+  const element = document.getElementById('results-area');
+
+  // PDF生成オプション（pdf-blockクラスのブロックを分割しない）
+  const opt = {
+    margin: [12, 10, 12, 10],
+    filename: filename,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: {
+      scale: 2,
+      useCORS: true,
+      backgroundColor: '#ffffff',
+      windowWidth: 800
+    },
+    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait', compress: true },
+    pagebreak: {
+      mode: ['avoid-all', 'css', 'legacy'],
+      avoid: ['.pdf-block', 'tr', 'p', 'h2']
+    }
+  };
+
+  // 通知を表示
+  const button = event.target.closest('button');
+  const original = button.innerHTML;
+  button.disabled = true;
+  button.innerHTML = '<svg class="animate-spin w-5 h-5 inline-block" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"></circle><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" class="opacity-75"></path></svg> PDF生成中...';
+
+  html2pdf().set(opt).from(element).save().then(() => {
+    button.disabled = false;
+    button.innerHTML = original;
+  }).catch(err => {
+    console.error(err);
+    alert('PDF生成中にエラーが発生しました。もう一度お試しください。');
+    button.disabled = false;
+    button.innerHTML = original;
+  });
+}
+
+// ========== フォームID一覧 ==========
+const FORM_IDS = ['power_company','family_size','daytime_occupancy','monthly_bill','monthly_kwh','plan','has_existing','existing_solar_kw',
+  'existing_gen','existing_battery','config','solar_kw','battery_maker','battery_model','battery_kwh','manual_gen',
+  'solar_cost','battery_cost','install_cost',
+  'economy_mode','arbitrage_mode','arbitrage_kwh','payment_method','loan_method','own_funds','manual_loan','loan_rate_pct','loan_years',
+  'buy_price_manual','night_price_manual','peak_price_manual','fit_price','install_year','elec_inflation_pct','degradation_pct',
+  'customer_name','staff_name','prefecture','city','dr_participation'];
+
+function saveState() { /* 自動保存無効 */ }
+
+// ========== ドラフト（未保存検知）管理 ==========
+const DRAFT_KEY     = 'sim_draft_v1';
+const CUSTOMERS_KEY = 'sim_customers_v2';
+
+function getDraft()            { try { return JSON.parse(localStorage.getItem(DRAFT_KEY)); } catch(e) { return null; } }
+function writeDraft(s, committed) { localStorage.setItem(DRAFT_KEY, JSON.stringify({ state: s, committed, ts: Date.now() })); }
+function clearDraft()          { localStorage.removeItem(DRAFT_KEY); }
+function commitDraft()         { const d = getDraft(); if (d) writeDraft(d.state, true); }
+
+// ========== フォームユーティリティ ==========
+function getFormState() {
+  const s = {};
+  FORM_IDS.forEach(id => { if ($(id)) s[id] = $(id).value; });
+  return s;
+}
+function applyState(s) {
+  // prefecture/city は dropdown の再生成が必要なため先に処理
+  if (s['prefecture'] && $('prefecture')) {
+    $('prefecture').value = s['prefecture'];
+    onPrefectureChange(); // 市区町村リストを再構築
+    if (s['city'] && $('city')) $('city').value = s['city'];
+  }
+  // battery_maker/model も dropdown の再生成が必要なため先に処理
+  if (s['battery_maker'] && $('battery_maker')) {
+    $('battery_maker').value = s['battery_maker'];
+    onBatteryMakerChange(); // 型式リストを再構築
+    if (s['battery_model'] && $('battery_model')) {
+      $('battery_model').value = s['battery_model'];
+      // 実効容量を復元
+      const maker = s['battery_maker'];
+      const model = s['battery_model'];
+      if (BATTERY_MODELS[maker]) {
+        const found = BATTERY_MODELS[maker].find(m => m.model === model);
+        if (found) $('battery_kwh_effective').value = found.effective_kwh;
+      }
+    }
+  }
+  FORM_IDS.forEach(id => {
+    if (id === 'prefecture' || id === 'city') return; // 上で処理済み
+    if (id === 'battery_maker' || id === 'battery_model') return; // 上で処理済み
+    if (s[id] !== undefined && $(id)) $(id).value = s[id];
+  });
+  // arbitrage_mode の表示状態を復元
+  if (s['arbitrage_mode'] !== undefined) onArbModeChange();
+}
+function hasMeaningfulInput() {
+  return ($('customer_name').value || '').trim().length > 0;
+}
+
+// 主要フィールドで内容変更を判定
+const KEY_FIELDS = ['customer_name','monthly_bill','monthly_kwh','solar_kw','battery_maker','battery_model','battery_kwh',
+  'solar_cost','battery_cost','install_cost',
+  'config','plan','loan_rate_pct','loan_years','own_funds','fit_price',
+  'prefecture','city','dr_participation'];
+function statesEqual(a, b) {
+  if (!a || !b) return false;
+  return KEY_FIELDS.every(k => String(a[k]||'') === String(b[k]||''));
+}
+
+// ========== 顧客データ管理 ==========
+function getCustomers() { try { return JSON.parse(localStorage.getItem(CUSTOMERS_KEY)) || []; } catch(e) { return []; } }
+function setCustomers(list) { localStorage.setItem(CUSTOMERS_KEY, JSON.stringify(list)); }
+
+function buildRecord(name, state) {
+  const sc = parseFloat(state.solar_cost)||0, bc = parseFloat(state.battery_cost)||0,
+        ic = parseFloat(state.install_cost)||0,
+        sub = (parseFloat(state.subsidy_national)||0)+(parseFloat(state.subsidy_pref)||0)+(parseFloat(state.subsidy_city)||0);
+  const d = new Date();
+  return {
+    id: Date.now(), name, staff: state.staff_name||'',
+    savedAt: `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`,
+    summary: { solarKw: parseFloat(state.solar_kw)||0, batteryKwh: parseFloat(state.battery_kwh)||0, netCost: Math.round(sc+bc+ic-sub) },
+    state,
+  };
+}
+
+// 確認なしで即保存（内部共通処理）
+function doSave(name, state) {
+  const list = getCustomers();
+  const idx  = list.findIndex(c => c.name === name);
+  const rec  = buildRecord(name, state);
+  if (idx >= 0) { rec.id = list[idx].id; list[idx] = rec; }
+  else          { list.unshift(rec); }
+  setCustomers(list);
+  commitDraft();
+  updateBadge();
+  return idx >= 0 ? 'updated' : 'created';
+}
+
+// 保存ボタン押下（確認ロジック付き）
+function saveCustomer() {
+  const name = ($('customer_name').value || '').trim();
+  if (!name) { alert('お客様名を入力してから保存してください。'); $('customer_name').focus(); return; }
+  const state = getFormState();
+  const list  = getCustomers();
+  const idx   = list.findIndex(c => c.name === name);
+
+  if (idx >= 0) {
+    if (statesEqual(list[idx].state, state)) {
+      // 内容変化なし → 保存済み扱い
+      commitDraft();
+      showToast(`「${name}」は既に最新の状態で保存されています`);
+      return;
+    }
+    // 内容が変わっている → 確認
+    if (!confirm(`「${name}」のデータは既に保存されています。\n内容が更新されています。上書き保存しますか？`)) return;
+  }
+  const result = doSave(name, state);
+  showToast(result === 'updated' ? `「${name}」を更新しました` : `「${name}」を保存しました`);
+}
+
+function loadCustomer(id) {
+  const c = getCustomers().find(x => x.id === id);
+  if (!c) return;
+  applyState(c.state);
+  writeDraft(c.state, true); // 読み込んだデータは保存済み扱い
+  onCompanyChange(); onFamilyChange(); onInstallYearChange(); calc();
+  closeCustomerList();
+  showToast(`「${c.name}」を読み込みました`);
+}
+
+function deleteCustomer(id, e) {
+  e.stopPropagation();
+  const c = getCustomers().find(x => x.id === id);
+  if (!c || !confirm(`「${c.name}」のデータを削除しますか？`)) return;
+  setCustomers(getCustomers().filter(x => x.id !== id));
+  updateBadge(); renderCustomerList();
+}
+
+// ========== リセット ==========
+function resetForm() {
+  const draft = getDraft();
+  const committed = draft ? draft.committed : true;
+  // 未保存かつお客様名あり → 保存を促す
+  if (!committed && hasMeaningfulInput()) {
+    const name = ($('customer_name').value || '').trim();
+    if (confirm(`「${name}」のデータが保存されていません。\n保存してからリセットしますか？\n\nOK → 保存してリセット\nキャンセル → 保存せずリセット`)) {
+      doSave(name, getFormState());
+      showToast(`「${name}」を保存しました`);
+    }
+  }
+  clearDraft();
+  location.reload();
+}
+
+// ========== 顧客リストUI ==========
+function openCustomerList()  { renderCustomerList(); $('customer-modal').classList.remove('hidden'); setTimeout(() => $('customer-search').value = '', 0); }
+function closeCustomerList() { $('customer-modal').classList.add('hidden'); }
+
+function renderCustomerList() {
+  const q    = ($('customer-search')?.value || '').trim().toLowerCase();
+  const list = getCustomers().filter(c => !q || c.name.toLowerCase().includes(q) || (c.staff||'').toLowerCase().includes(q));
+  const body = $('customer-list-body');
+  if (!body) return;
+
+  if (list.length === 0) {
+    body.innerHTML = `<div class="text-center py-12 text-slate-400">
+      <svg class="w-12 h-12 mx-auto mb-3 opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+      </svg>
+      <p class="text-sm">${q ? '一致する顧客が見つかりません' : '保存済みの顧客データはありません'}</p>
+      <p class="text-xs mt-1">${q ? '' : '入力後「保存」ボタンで顧客を登録できます'}</p>
+    </div>`;
+    return;
+  }
+  body.innerHTML = list.map(c => {
+    const nc = c.summary.netCost > 0 ? '¥'+c.summary.netCost.toLocaleString('ja-JP') : '—';
+    const eq = [c.summary.solarKw>0?`太陽光 ${c.summary.solarKw}kW`:'', c.summary.batteryKwh>0?`蓄電池 ${c.summary.batteryKwh}kWh`:''].filter(Boolean).join(' ／ ')||'—';
+    return `<div onclick="loadCustomer(${c.id})" class="bg-white border border-slate-200 rounded-xl p-4 cursor-pointer hover:border-blue-400 hover:shadow-md transition group relative">
+      <div class="pr-8">
+        <div class="flex items-start justify-between gap-2 mb-1">
+          <p class="font-semibold text-slate-800 text-sm leading-tight">${escHtml(c.name)}</p>
+          <span class="text-xs text-slate-400 whitespace-nowrap">${c.savedAt}</span>
+        </div>
+        ${c.staff?`<p class="text-xs text-slate-500 mb-2">担当：${escHtml(c.staff)}</p>`:'<div class="mb-2"></div>'}
+        <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-600"><span>🔧 ${eq}</span><span>💰 実質負担 ${nc}</span></div>
+      </div>
+      <button onclick="deleteCustomer(${c.id},event)" class="absolute top-3 right-3 p-1 rounded-md opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-500 text-slate-300 transition">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+      </button>
+    </div>`;
+  }).join('');
+}
+
+function escHtml(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function updateBadge() {
+  const n = getCustomers().length, b = $('customer-count-badge');
+  if (!b) return;
+  b.textContent = n;
+  n > 0 ? b.classList.remove('hidden') : b.classList.add('hidden');
+}
+
+function showToast(msg) {
+  const t = $('save-toast');
+  if (!t) return;
+  t.textContent = '✅ ' + msg;
+  t.classList.remove('hidden');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(() => t.classList.add('hidden'), 2800);
+}
+
+// ========== 初期化 ==========
+(function init() {
+  const draft = getDraft();
+  // 前回セッションで未保存データがあれば確認
+  if (draft && !draft.committed) {
+    const name = (draft.state?.customer_name || '').trim();
+    if (name) {
+      if (confirm(`前回の「${name}」のデータが保存されていません。\n保存してから新規シミュレーションを始めますか？\n\nOK → 保存して開始\nキャンセル → 保存せず開始`)) {
+        doSave(name, draft.state);
+        showToast(`「${name}」を保存しました`);
+      }
+    }
+  }
+  clearDraft(); // 常にデフォルト値でスタート
+  onCompanyChange(); onFamilyChange(); onInstallYearChange(); onPaymentMethodChange(); calc(); updateBadge();
+})();
+
+// フォーム変更時に未保存ドラフトを記録
+function onFormChange() { writeDraft(getFormState(), false); calc(); }
+FORM_IDS.forEach(id => {
+  const el = $(id);
+  if (!el) return;
+  el.addEventListener((el.tagName==='SELECT'||el.type==='number')?'change':'input', onFormChange);
+});
+
+// 数値入力：フォーカス時に「0」を空白にして入力しやすくする
+document.querySelectorAll('input[type="number"]').forEach(el => {
+  el.addEventListener('focus', function() {
+    if (this.value === '0') this.value = '';
+  });
+  el.addEventListener('blur', function() {
+    if (this.value === '') {
+      this.value = '0';
+      onFormChange();
+    }
+  });
+});
+</script>
+</body>
+</html>
